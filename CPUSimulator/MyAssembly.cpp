@@ -1,114 +1,141 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <string>
 #include <conio.h>
-#include <sstream>
-#include <algorithm> 
-#include <functional> 
-#include <cctype>
-#include <locale>
-#include <vector>
+#include <clocale>
+#include "CPUSimulatorHeader.h"
 
 using namespace std;
 
-bool validateIOperands(string arg1, string arg2, string arg3);
-bool validateROperands(string arg1, string arg2, string arg3);
-string getMashineCode(vector<vector<string>> &vs);
-bool findInRegisters(string arg);
-bool isArgDigit(string arg);
-int getNumberOfICommand(string command);
-string toBinaryCode(int number);
-void reverse(string &s);
-string firstArgToBinaryCode(string arg);
-int getNumberOfReg(string arg);
-string constToBinaryCode(int constant);
-int getNumberOfRFuncts(string funct);
+int const REG_SIZE = 4;
+int const ICOMMANDS_SIZE = 7;
+int const RFUNCTS_SIZE = 13;
 
-string registers[4] = {"$s0","$s1","$s2","$s3"};
-string iCommands[3] = { "addi", "andi", "ori" };
-string rFuncts[3] = { "add", "sub", "mul" };
+string registers[REG_SIZE] = {"$s0","$s1","$s2","$s3"};
+string iCommands[ICOMMANDS_SIZE] = { "addi", "andi", "ori", "lw", "sw", "beq", "bne" };
+string rFuncts[RFUNCTS_SIZE] = { "add", "sub", "mul", "div", "and", "or", "xor", "nor", "slt", "sll", "srl", "sra", "jr" };
+
+string pathToAsmProgramm;
 
 int main() {
-	ifstream infile("D://myassm.txt");
-	string line;
-	vector<vector<string>> vs;
-	while (getline(infile, line))
-	{
-		istringstream ss(line);
-		string token;
-		vector<string> tmp;
-		while (std::getline(ss, token, ' ')) {
-			istringstream ss2(token);
-			string token2;
-			while (getline(ss2, token2, ',')) {
-				tmp.push_back(token2);
-			}
-		}
-		vs.push_back(tmp);
-	}
-	
-	string result = getMashineCode(vs);
-	cout << result;
+	setlocale(LC_ALL, "Russian");
 
+	ifstream assemblyFile = createFileReader();
+	createPause();
+
+	string assemblyInstruction;
+	vector<vector<string>> assemblyProgramm;
+
+	while (getline(assemblyFile, assemblyInstruction))
+	{
+		assemblyProgramm.push_back(parseOneAssemblyCommand(assemblyInstruction));
+	}
+
+	assemblyFile.close();
+	cout<<createMachineCode(assemblyProgramm);
 	_getch();
 }
 
-string getMashineCode(vector<vector<string>> &vs) {
-	string machineCode;
-	ofstream out("D://mashineCode.txt");
-	for (int i = 0; i < vs.size(); i++) {
-		if (vs[i][0] == "addi" || vs[i][0] == "andi" || vs[i][0] == "ori") {
-			if (vs[i].size() != 4) {
-				return "syntax error";
-			}
-			if (validateIOperands(vs[i][1], vs[i][2], vs[i][3]) == true) {
-				int number = getNumberOfICommand(vs[i][0]);
-				machineCode += toBinaryCode(number)+' ';
-				machineCode += firstArgToBinaryCode(vs[i][1])+' ';
-				machineCode += firstArgToBinaryCode(vs[i][2])+' ';
-				machineCode += constToBinaryCode(stoi(vs[i][3]));
-			}
-			else return "syntax error";
+void createPause() {
+	cout << "Нажмите любую клавишу что бы начать компиляцию...";
+	cin.get();
+	cin.get();
+}
+
+ifstream createFileReader() {
+	ifstream fileReader;
+	cout << "Введите полное имя файла с программой на ассемблере: ";
+	cin >> pathToAsmProgramm;
+	fileReader.open(pathToAsmProgramm);
+	while (fileReader.is_open() == 0) {
+		cout << "Файла с укзанным именем не существует. Пожалуйста, введите другое имя: ";
+		cin >> pathToAsmProgramm;
+		fileReader.open(pathToAsmProgramm);
+	}
+	return fileReader;
+}
+
+vector<string> parseOneAssemblyCommand(string& assemblyInstruction) {
+	vector<string> tmp;
+	istringstream iss(assemblyInstruction);
+	string subStringAfterSpaces;
+
+	while (getline(iss, subStringAfterSpaces, ' ')) {
+		istringstream issForSubstring(subStringAfterSpaces);
+		string subStringAfterCommas;
+		while (getline(issForSubstring, subStringAfterCommas, ',')) {
+			tmp.push_back(subStringAfterCommas);
 		}
-		else if (vs[i][0] == "add") {
-			if (vs[i].size() != 4) {
-				return "syntax error";
+	}
+	return tmp;
+}
+
+string createMachineCode(vector<vector<string>>& assemblyInstractions) {
+	string machineCode;
+	ofstream out("D://machineCode.txt");
+
+	for (int i = 0; i < assemblyInstractions.size(); i++) {
+		if (isIType(assemblyInstractions[i][0])) {
+			if (isICorrect(assemblyInstractions[i])) {
+				machineCode += convertIToMachineCode(assemblyInstractions[i]);
 			}
-			if (validateROperands(vs[i][1], vs[i][2], vs[i][3]) == true) {
-				machineCode += "000000 ";
-				machineCode += firstArgToBinaryCode(vs[i][1]) + ' ';
-				machineCode += firstArgToBinaryCode(vs[i][2]) + ' ';
-				machineCode += firstArgToBinaryCode(vs[i][3]) + ' ';
-				machineCode += "00000 ";
-				int number = getNumberOfRFuncts(vs[i][0]);
-				machineCode += toBinaryCode(number) + ' ';
+			else {
+				return  "syntax error on line: " + to_string(i+1);
+			}
+		}
+		else if (isRType(assemblyInstractions[i][0])) {
+			if (isRCorrect(assemblyInstractions[i])){
+				machineCode += convertRToMachineCode(assemblyInstractions[i]);
+			}
+			else {
+				return  "syntax error on line: " + to_string(i + 1);
 			}
 		}
 		else {
-			return "syntax error";
+			return  "syntax error on line: " + to_string(i + 1);
 		}
+
 		out << machineCode;
 		machineCode = "";
 		out << '\n';
-		//in file
 	}
+
 	out.close();
-	return machineCode;
+	return "program compiled successfully";
 }
 
-bool validateIOperands(string arg1, string arg2, string arg3) {
-	if(findInRegisters(arg1) && findInRegisters(arg2) && isArgDigit(arg3))
+bool isIType(string& command) {
+	return command == "addi" || command == "andi" || command == "ori";
+}
+
+bool isRType(string& command) {
+	return command == "add" || command == "mul" || command == "sub";
+}
+
+bool isICorrect(vector<string>& assmInstr) {
+	return assmInstr.size() == 4 && handleIOperands(assmInstr[1], assmInstr[2], assmInstr[3]);
+}
+
+bool isRCorrect(vector<string>& assmInstr) {
+	return isRSizeCorrect(assmInstr) && handleROperands(assmInstr[1], assmInstr[2], assmInstr[3]);
+}
+
+bool isRSizeCorrect(vector<string>& assmInstr) {
+	return assmInstr[0] == "jr" && assmInstr.size() == 2 || assmInstr[0] != "jr" && assmInstr.size() == 4;
+}
+
+bool handleIOperands(string& arg1, string& arg2, string& arg3) {
+	if(isRegister(arg1) && isRegister(arg2) && isArgDigit(arg3))
 		return true;
 }
 
-bool validateROperands(string arg1, string arg2, string arg3) {
-	if (findInRegisters(arg1) && findInRegisters(arg2) && findInRegisters(arg3))
+bool handleROperands(string& arg1, string& arg2, string& arg3) {
+	if (isRegister(arg1) && isRegister(arg2) && isRegister(arg3))
 		return true;
 }
 
-bool findInRegisters(string arg) {
-	for (int i = 0; i < 4; i++)
+bool isRegister(string& arg) {
+	for (int i = 0; i < REG_SIZE; i++)
 	{
 		if (registers[i] == arg) {
 			return true;
@@ -117,7 +144,7 @@ bool findInRegisters(string arg) {
 	return false;
 }
 
-bool isArgDigit(string arg) {
+bool isArgDigit(string& arg) {
 	for (int i = 0; i < arg.length(); i++) {
 		if (!isdigit(arg[i])) {
 			return false;
@@ -126,18 +153,57 @@ bool isArgDigit(string arg) {
 	return true;
 }
 
-int getNumberOfICommand(string command) {
-	for (int i = 0; i < 3; i++) {
+string convertIToMachineCode(vector<string>& assmInstr) {
+	string opcode = toBinaryCode(getNumberOfICommand(assmInstr[0]), 6) + ' ';
+	string rr = toBinaryCode(getNumberOfReg(assmInstr[1]), 5) + ' ';                   // регистр-назначение
+	string rs = toBinaryCode(getNumberOfReg(assmInstr[2]), 5) + ' ';                   // регистр-источник
+	string constant = toBinaryCode(stoi(assmInstr[3]), 16);                      // константный аргумент
+	return opcode + rs + rr + constant;
+}
+
+string convertRToMachineCode(vector<string>& assmInstr) {
+	string result;
+	string opcode = "000000 ";                                         // 6 bits
+	string rr = toBinaryCode(getNumberOfReg(assmInstr[1]), 5) + ' ';   // регистр назначение 5 bits
+	if (assmInstr[0] == "jr") {
+		return opcode + rr
+			+ "000000000000000 "                                      // 15 нулей - 15 bits
+			+ toBinaryCode(getNumberOfRFuncts(assmInstr[0]), 6);      // funct - 6 bits
+	}
+	string rs = toBinaryCode(getNumberOfReg(assmInstr[2]), 5) + ' ';   // первый регистр источник 5 bits
+	string rt = toBinaryCode(getNumberOfReg(assmInstr[3]), 5) + ' ';   // второй регистр источник 5 bits
+	string shamt = "00000 ";
+	string funct = toBinaryCode(getNumberOfRFuncts(assmInstr[0]), 6) + ' ';
+	return opcode + rs + rt + rr +shamt + funct;
+}
+
+int getNumberOfICommand(string& command) {
+	for (int i = 0; i < ICOMMANDS_SIZE; i++) {
 		if (command == iCommands[i]) {
 			return i + 1;
 		}
 	}
 }
 
-string toBinaryCode(int number) {
+int getNumberOfRFuncts(string& funct) {
+	for (int i = 0; i < RFUNCTS_SIZE; i++) {
+		if (funct == rFuncts[i]) {
+			return i + 1;
+		}
+	}
+}
+
+int getNumberOfReg(string& arg) {
+	for (int i = 0; i < REG_SIZE; i++) {
+		if (arg == registers[i]) {
+			return i + 1;
+		}
+	}
+}
+
+string toBinaryCode(int number, int sizeOfBinaryField) {
 	string binary;
-	int idx = 0;
-	while (idx < 6) {
+	for (int i = 0; i < sizeOfBinaryField; i++ ){
 		if (number % 2 == 0) {
 			binary += '0';
 		}
@@ -145,7 +211,6 @@ string toBinaryCode(int number) {
 			binary += '1';
 		}
 		number /= 2;
-		idx++;
 	}
 	reverse(binary);
 	return binary;
@@ -153,63 +218,15 @@ string toBinaryCode(int number) {
 
 void reverse(string &s)
 {
-	int c, i, j;
+	int tmp;
 
-	for (i = 0, j = s.length() - 1; i < j; i++, j--)
+	for (int i = 0, j = s.length() - 1; i < j; i++, j--)
 	{
-		c = s[i];
+		tmp = s[i];
 		s[i] = s[j];
-		s[j] = c;
+		s[j] = tmp;
 	}
 }
 
-string firstArgToBinaryCode(string arg) {
-	int number = getNumberOfReg(arg);
-	string binary;
-	int idx = 0;
-	while (idx < 5) {
-		if (number % 2 == 0) {
-			binary += '0';
-		}
-		else {
-			binary += '1';
-		}
-		number /= 2;
-		idx++;
-	}
-	reverse(binary);
-	return binary;
-}
 
-int getNumberOfReg(string arg) {
-	for (int i = 0; i < 4; i++) {
-		if (arg == registers[i]) {
-			return i + 1;
-		}
-	}
-}
 
-string constToBinaryCode(int constant) {
-	string binary;
-	int idx = 0;
-	while (idx < 16) {
-		if (constant % 2 == 0) {
-			binary += '0';
-		}
-		else {
-			binary += '1';
-		}
-		constant /= 2;
-		idx++;
-	}
-	reverse(binary);
-	return binary;
-}
-
-int getNumberOfRFuncts(string funct) {
-	for (int i = 0; i < 3; i++) {
-		if (funct == rFuncts[i]) {
-			return i + 1;
-		}
-	}
-}
