@@ -11,13 +11,13 @@ int pc;
 bool run = true;
 string codeSegment[CODE_SEGMENT_SIZE];
 string instr;
+short registers[REG_SIZE];
 
 string opcode;
-string rr;
-string rs;
-string rt;
-string imm;
-string addr;
+unsigned short rr;
+unsigned short rs;
+unsigned short rt;
+unsigned short imm;
 
 void readCommand() {
 	instr = codeSegment[pc];
@@ -33,12 +33,10 @@ void executeProgramm(string& pathToMachineCode) {
 
 	while (run) {
 		readCommand();
-		if (run) {
-			cout << instr<<endl;
-		}
 		pc = pc + TO_PC;
 		deshifrCommand();
 	}
+	cout << "result: $s0 = " << registers[1] << " $s1 = " << registers[2] << " $s2 = " << registers[3] << " $t0 = " << registers[4] << endl;
 }
 
 void loadProgramm(ifstream& fileReader) {
@@ -59,15 +57,99 @@ void deshifrCommand() {
 	}
 	else if (isIOpcode()) {
 		getIOperands();
+		if (opcode == "01110") {
+			registers[rr] = registers[rs] + imm;
+		}
 	}
 	else {
 		getROperands();
+		if (opcode == "00000") {
+			registers[rr] = registers[rs] + registers[rt];
+		}
 	}
+}
+
+bool isJOpcode() {
+	for (int i = 0; i < JCOMMANDS_SIZE; i++) {
+		if (opcode == jOpcodes[i]){
+			return true;
+		}
+	}
+	return false;
+}
+
+bool isIOpcode() {
+	for (int i = 0; i < ICOMMANDS_SIZE; i++) {
+		if (opcode == iOpcodes[i]) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void getJOperands() {
+	getImm();
+}
+
+void getIOperands() {
+	getImm();
+	getRR();
+	getRS();
+}
+
+void getROperands() {
+	getRR();
+	getRS();
+	getRT();
 }
 
 void getOpcode() {
 	opcode = "";
-	for (int i = 0; i < OPCODE_LENGTH; i++) {
+	for (int i = OPCODE_FINISH; i >= OPCODE_START; i--) {
 		opcode += instr[i];
 	}
+}
+
+int fromBinaryToInt(string& command) {
+	int pow = 1;
+	int result = 0;
+	for (int i = command.length()-1; i >= 0; i--) {
+		if (command[i] == '1') {
+			result = result + pow;
+		}
+		pow = pow << 1;
+	}
+	return result;
+}
+
+void getImm() {
+	string tmp = "";
+	for (int i = IMM_FINISH; i >= IMM_START; i--) {
+		tmp += instr[i];
+	}
+	imm = fromBinaryToInt(tmp);
+}
+
+void getRR() {
+	string tmp = "";
+	for (int i = RR_FINISH; i >= RR_START; i--) {
+		tmp += instr[i];
+	}
+	rr = fromBinaryToInt(tmp);
+}
+
+void getRS() {
+	string tmp = "";
+	for (int i = RS_FINISH; i >= RS_START; i--) {
+		tmp += instr[i];
+	}
+	rs = fromBinaryToInt(tmp);
+}
+
+void getRT() {
+	string tmp = "";
+	for (int i = RT_FINISH; i >= RT_START; i--) {
+		tmp += instr[i];
+	}
+	rt = fromBinaryToInt(tmp);
 }
