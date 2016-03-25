@@ -117,6 +117,7 @@ string createMachineCode(vector<vector<string>>& assemblyInstractions, string& p
 			return  "syntax error on line: " + to_string(i + 1) + '\n';
 		}
 
+		reverse(machineCode);
 		out << machineCode;
 		machineCode = "";
 		out << '\n';
@@ -169,7 +170,7 @@ bool isRCorrect(vector<string>& assmInstr) {
 }
 
 bool isRSizeCorrect(vector<string>& assmInstr) {
-	return assmInstr[0] == "jr" && assmInstr.size() == 2 || assmInstr[0] != "jr" && assmInstr.size() == 4;
+	return assmInstr[0] == "jr" && assmInstr.size() == 2 || assmInstr[0] != "jr" && assmInstr.size() == 4 || assmInstr[0] == "print" && assmInstr.size() == 2;
 }
 
 bool handleJOperands(string& arg) {
@@ -193,7 +194,7 @@ bool handleROperands(string& arg1, string& arg2, string& arg3) {
 bool isRegister(string& arg) {
 	for (int i = 0; i < REG_SIZE; i++)
 	{
-		if (registers[i] == arg) {
+		if (registersCodes[i] == arg) {
 			return true;
 		}
 	}
@@ -227,7 +228,7 @@ string convertRToMachineCode(vector<string>& assmInstr) {
 	string result;
 	string opcode = toBinaryCode(getNumberOfCommand(assmInstr[0]), OPCODE_LENGTH);                                         // 5 bits
 	string rr = toBinaryCode(getNumberOfReg(assmInstr[1]), REGCODE_LENGTH);   // регистр назначение 4 bits
-	if (assmInstr[0] == "jr") {
+	if (assmInstr[0] == "jr" || assmInstr[0] == "print") {
 		return opcode + rr
 			+ "00000000000000000000000";                                      // 23 нуля - 23 bits
 
@@ -247,7 +248,7 @@ int getNumberOfCommand(string& command) {
 
 int getNumberOfReg(string& arg) {
 	for (int i = 0; i < REG_SIZE; i++) {
-		if (arg == registers[i]) {
+		if (arg == registersCodes[i]) {
 			return i;
 		}
 	}
