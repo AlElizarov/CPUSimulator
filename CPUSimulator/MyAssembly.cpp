@@ -75,18 +75,38 @@ vector<string> parseOneAssemblyCommand(string& assemblyInstruction) {
 	string subStringAfterSpaces;
 
 	while (getline(iss, subStringAfterSpaces, ' ')) {
-		istringstream issForSubstring(subStringAfterSpaces);
-		string subStringAfterCommas;
-		while (getline(issForSubstring, subStringAfterCommas, ',')) {
-			tmp.push_back(subStringAfterCommas);
+		if (myFind(subStringAfterSpaces)) {
+			istringstream issForSubstring(subStringAfterSpaces);
+			string subStringAfterCommas;
+			while (getline(issForSubstring, subStringAfterCommas, ',')) {
+				tmp.push_back(subStringAfterCommas);
+			}
+		}
+		else {
+			tmp.push_back(subStringAfterSpaces);
 		}
 	}
 	return tmp;
 }
 
+bool myFind(string& s) {
+	for (int i = 0; i < s.length(); i++) {
+		if (s[i] == ',')
+			return true;
+	}
+	return false;
+}
+
 string createMachineCode(vector<vector<string>>& assemblyInstractions, string& path) {
 	string machineCode;
 	ofstream out(path);
+
+	for (int i = 0; i < assemblyInstractions.size(); i++) {
+		for (int j = 0; j < assemblyInstractions[i].size(); j++) {
+			cout << assemblyInstractions[i][j] << "  ";
+		}
+		cout << endl;
+	}
 
 	for (int i = 0; i < assemblyInstractions.size(); i++) {
 		if (isIType(assemblyInstractions[i][0])) {
@@ -170,7 +190,7 @@ bool isRCorrect(vector<string>& assmInstr) {
 }
 
 bool isRSizeCorrect(vector<string>& assmInstr) {
-	return assmInstr[0] == "jr" && assmInstr.size() == 2 || assmInstr[0] != "jr" && assmInstr.size() == 4 || assmInstr[0] == "print" && assmInstr.size() == 2;
+	return (assmInstr[0] == "jr" && assmInstr.size() == 2) || (assmInstr[0] != "jr" && assmInstr.size() == 4 && assmInstr[0] != "print") || (assmInstr[0] == "print" && assmInstr.size() == 2);
 }
 
 bool handleJOperands(string& arg) {
@@ -228,10 +248,11 @@ string convertRToMachineCode(vector<string>& assmInstr) {
 	string result;
 	string opcode = toBinaryCode(getNumberOfCommand(assmInstr[0]), OPCODE_LENGTH);                                         // 5 bits
 	string rr = toBinaryCode(getNumberOfReg(assmInstr[1]), REGCODE_LENGTH);   // регистр назначение 4 bits
-	if (assmInstr[0] == "jr" || assmInstr[0] == "print") {
+	string stmp = "print";
+	if (assmInstr[0] == "jr" || assmInstr[0] == stmp) {
+		cout << "yesss" << endl;
 		return opcode + rr
 			+ "00000000000000000000000";                                      // 23 нуля - 23 bits
-
 	}
 	string rs = toBinaryCode(getNumberOfReg(assmInstr[2]), REGCODE_LENGTH);   // первый регистр источник 5 bits
 	string rt = toBinaryCode(getNumberOfReg(assmInstr[3]), REGCODE_LENGTH);   // второй регистр источник 5 bits
