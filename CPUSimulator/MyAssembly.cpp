@@ -3,9 +3,12 @@
 #include <sstream>
 #include <conio.h>
 #include <clocale>
+#include <map>
 #include "CPUSimulatorHeader.h"
 
 using namespace std;
+
+map<string, int> marksTable;
 
 int main() {
 	setlocale(LC_ALL, "Russian");
@@ -17,15 +20,29 @@ int main() {
 	string assemblyInstruction;
 	vector<vector<string>> assemblyProgramm;
 
+	int currentCommand = 0;
 	while (getline(assemblyFile, assemblyInstruction))
 	{
-		assemblyProgramm.push_back(parseOneAssemblyCommand(assemblyInstruction));
+		if (!findCharInString(assemblyInstruction, ' ') && !findCharInString(assemblyInstruction, ',') && findCharInString(assemblyInstruction, ':') && assemblyInstruction.length() > 1) {
+			marksTable.insert(pair<string, int>(assemblyInstruction, currentCommand));
+		}
+		else {
+			assemblyProgramm.push_back(parseOneAssemblyCommand(myTrim(assemblyInstruction)));
+		}
+		currentCommand += 4;
 	}
+
+	for (auto it = marksTable.begin(); it != marksTable.end(); ++it)
+	{
+		cout << it->first << " : " << it->second << endl;
+	}
+
 
 	assemblyFile.close();
 
 	string pathToMachineCode = createMachineCodePath(pathToAsmProgram);
-	cout << createMachineCode(assemblyProgramm, pathToMachineCode);
+	string assemblyResult = createMachineCode(assemblyProgramm, pathToMachineCode);
+	cout << assemblyResult;
 	createPause("Нажмите enter что бы начать выполнение...");
 	executeProgramm(pathToMachineCode);
 
@@ -75,7 +92,7 @@ vector<string> parseOneAssemblyCommand(string& assemblyInstruction) {
 	string subStringAfterSpaces;
 
 	while (getline(iss, subStringAfterSpaces, ' ')) {
-		if (myFind(subStringAfterSpaces)) {
+		if (findCharInString(subStringAfterSpaces, ',')) {
 			istringstream issForSubstring(subStringAfterSpaces);
 			string subStringAfterCommas;
 			while (getline(issForSubstring, subStringAfterCommas, ',')) {
@@ -89,9 +106,9 @@ vector<string> parseOneAssemblyCommand(string& assemblyInstruction) {
 	return tmp;
 }
 
-bool myFind(string& s) {
+bool findCharInString(string& s, char c) {
 	for (int i = 0; i < s.length(); i++) {
-		if (s[i] == ',')
+		if (s[i] == c)
 			return true;
 	}
 	return false;
@@ -109,12 +126,13 @@ string createMachineCode(vector<vector<string>>& assemblyInstractions, string& p
 	}
 
 	for (int i = 0; i < assemblyInstractions.size(); i++) {
+
 		if (isIType(assemblyInstractions[i][0])) {
 			if (isICorrect(assemblyInstractions[i])) {
 				machineCode += convertIToMachineCode(assemblyInstractions[i]);
 			}
 			else {
-				return  "syntax error on line: " + to_string(i + 1)+'\n';
+				return  "syntax error i on line: " + to_string(i + 1)+'\n';
 			}
 		}
 		else if (isRType(assemblyInstractions[i][0])) {
@@ -122,7 +140,7 @@ string createMachineCode(vector<vector<string>>& assemblyInstractions, string& p
 				machineCode += convertRToMachineCode(assemblyInstractions[i]);
 			}
 			else {
-				return  "syntax error on line: " + to_string(i + 1) + '\n';
+				return  "syntax error r on line: " + to_string(i + 1) + '\n';
 			}
 		}
 		else if (isJType(assemblyInstractions[i][0])){
@@ -130,14 +148,14 @@ string createMachineCode(vector<vector<string>>& assemblyInstractions, string& p
 				machineCode += convertJToMachineCode(assemblyInstractions[i]);
 			}
 			else {
-				return  "syntax error on line: " + to_string(i + 1) + '\n';
+				return  "syntax error j on line: " + to_string(i + 1) + '\n';
 			}
 		}
 		else {
 			return  "syntax error on line: " + to_string(i + 1) + '\n';
 		}
 
-		reverse(machineCode);
+		//reverse(machineCode);
 		out << machineCode;
 		machineCode = "";
 		out << '\n';
@@ -182,32 +200,53 @@ bool isJCorrect(vector<string>& assmInstr) {
 }
 
 bool isICorrect(vector<string>& assmInstr) {
-	return assmInstr.size() == 4 && handleIOperands(assmInstr[1], assmInstr[2], assmInstr[3]);
+	return assmInstr.size() == 4 && handleIOperands(assmInstr);
 }
 
 bool isRCorrect(vector<string>& assmInstr) {
-	return isRSizeCorrect(assmInstr) && handleROperands(assmInstr[1], assmInstr[2], assmInstr[3]);
+	bool res;
+	if (assmInstr[0] == "jr" || assmInstr[0] == "print") {
+		res = isRSizeCorrect(assmInstr) && handleROperands(assmInstr);
+	}
+	else {
+		res = isRSizeCorrect(assmInstr) && handleROperands(assmInstr);
+	}
+	return res;
 }
 
 bool isRSizeCorrect(vector<string>& assmInstr) {
-	return (assmInstr[0] == "jr" && assmInstr.size() == 2) || (assmInstr[0] != "jr" && assmInstr.size() == 4 && assmInstr[0] != "print") || (assmInstr[0] == "print" && assmInstr.size() == 2);
+	return (assmInstr[0] == "jr" && assmInstr.size() == 2) || 
+		(assmInstr[0] != "jr" && assmInstr.size() == 4 && assmInstr[0] != "print") || (assmInstr[0] == "print" && assmInstr.size() == 2);
 }
 
 bool handleJOperands(string& arg) {
-	if (isRegister(arg))
+	if (isMark(arg))
 		return true;
 	return false;
 }
 
-bool handleIOperands(string& arg1, string& arg2, string& arg3) {
-	if(isRegister(arg1) && isRegister(arg2) && isArgDigit(arg3))
-		return true;
+bool handleIOperands(vector<string>& assmInstr) {
+	if (assmInstr[0] == "beq" || assmInstr[0] == "bne") {
+		if (isRegister(assmInstr[1]) && isRegister(assmInstr[2]) && isMark(assmInstr[3])) {
+			return true;
+		}
+	}
+	else {
+		if (isRegister(assmInstr[1]) && isRegister(assmInstr[2]) && isArgDigit(assmInstr[3]))
+			return true;
+	}
 	return false;
 }
 
-bool handleROperands(string& arg1, string& arg2, string& arg3) {
-	if (isRegister(arg1) && isRegister(arg2) && isRegister(arg3))
-		return true;
+bool handleROperands(vector<string>& assmInstr) {
+	if (assmInstr[0] == "jr" || assmInstr[0] == "print") {
+		if (isRegister(assmInstr[1]))
+			return true;
+	}
+	else {
+		if (isRegister(assmInstr[1]) && isRegister(assmInstr[2]) && isRegister(assmInstr[3]))
+			return true;
+	}
 	return false;
 }
 
@@ -221,8 +260,17 @@ bool isRegister(string& arg) {
 	return false;
 }
 
+bool isMark(string& arg) {
+	string mark = arg + ':';
+	if (marksTable.count(mark)) {
+		return true;
+	}
+	return false;
+}
+
 bool isArgDigit(string& arg) {
 	for (int i = 0; i < arg.length(); i++) {
+		if (i == 0 && arg[i] == '-') continue;
 		if (!isdigit(arg[i])) {
 			return false;
 		}
@@ -231,25 +279,34 @@ bool isArgDigit(string& arg) {
 }
 
 string convertJToMachineCode(vector<string>& assmInstr) {
+	cout << "convert j"<<endl;
 	string opcode = toBinaryCode(getNumberOfCommand(assmInstr[0]), OPCODE_LENGTH);
-	string addr = toBinaryCode(getNumberOfReg(assmInstr[1]), IMM);                   // регистр с адресом
+	string addr = toBinaryCode(marksTable.find(assmInstr[1]+':')->second, IMM);                   // адреc
 	return opcode + addr +"00000000000";
 }
 
 string convertIToMachineCode(vector<string>& assmInstr) {
+	cout << "convert i" << endl;
 	string opcode = toBinaryCode(getNumberOfCommand(assmInstr[0]), OPCODE_LENGTH);
 	string rr = toBinaryCode(getNumberOfReg(assmInstr[1]), REGCODE_LENGTH);                   // регистр-назначение
 	string rs = toBinaryCode(getNumberOfReg(assmInstr[2]), REGCODE_LENGTH);                   // регистр-источник
-	string constant = toBinaryCode(stoi(assmInstr[3]), IMM);                      // константный аргумент
+	// константный аргумент
+	string constant;
+	if (assmInstr[0] == "beq" || assmInstr[0] == "bne") {
+		constant = toBinaryCode(marksTable.find(assmInstr[3] + ':')->second, IMM);
+	}
+	else {
+		constant = toBinaryCode(stoi(assmInstr[3]), IMM);
+	}
 	return opcode + rr + rs + constant+"000";
 }
 
 string convertRToMachineCode(vector<string>& assmInstr) {
+	cout << "convert r" << assmInstr[0]<<endl;
 	string result;
 	string opcode = toBinaryCode(getNumberOfCommand(assmInstr[0]), OPCODE_LENGTH);                                         // 5 bits
 	string rr = toBinaryCode(getNumberOfReg(assmInstr[1]), REGCODE_LENGTH);   // регистр назначение 4 bits
-	string stmp = "print";
-	if (assmInstr[0] == "jr" || assmInstr[0] == stmp) {
+	if (!assmInstr[0].compare("jr") || !assmInstr[0].compare("print")) {
 		cout << "yesss" << endl;
 		return opcode + rr
 			+ "00000000000000000000000";                                      // 23 нуля - 23 bits
@@ -300,6 +357,33 @@ void reverse(string &s)
 		s[i] = s[j];
 		s[j] = tmp;
 	}
+}
+
+string myTrim(string& str)
+{
+	int i = 0;
+	for (char c : str)
+	{
+		if (!isspace(c))
+			break;
+		i++;
+	}
+
+	string trimmed = str.substr(i, (str.length() - i));
+	reverse(trimmed);
+
+	i = 0;
+	for (char c : trimmed)
+	{
+		if (!isspace(c))
+			break;
+		i++;
+	}
+
+	trimmed = trimmed.substr(i, (trimmed.length()-i));
+
+	reverse(trimmed);
+	return trimmed;
 }
 
 
