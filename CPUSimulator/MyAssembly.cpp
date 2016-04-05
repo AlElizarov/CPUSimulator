@@ -9,44 +9,47 @@
 using namespace std;
 
 map<string, int> marksTable;
+vector<vector<string>> assemblyProgramm;
+string pathToAsmProgramm;
+ifstream fileReader;
 
 int main() {
 	setlocale(LC_ALL, "Russian");
 
-	string pathToAsmProgram;
-	ifstream assemblyFile = createFileReader(pathToAsmProgram);
+	firstPassage();                                               
 	createPause("Нажмите enter что бы начать компиляцию...");
 
-	string assemblyInstruction;
-	vector<vector<string>> assemblyProgramm;
+	string pathToMachineCode = createMachineCodePath();                
+	createMachineCode(pathToMachineCode);                    // second passage
 
-	int currentCommand = 0;
-	while (getline(assemblyFile, assemblyInstruction))
-	{
-		if (!findCharInString(assemblyInstruction, ' ') && !findCharInString(assemblyInstruction, ',') && findCharInString(assemblyInstruction, ':') && assemblyInstruction.length() > 1) {
-			marksTable.insert(pair<string, int>(assemblyInstruction, currentCommand));
-		}
-		else {
-			assemblyProgramm.push_back(parseOneAssemblyCommand(myTrim(assemblyInstruction)));
-		}
-		currentCommand += 4;
-	}
-
-	for (auto it = marksTable.begin(); it != marksTable.end(); ++it)
-	{
-		cout << it->first << " : " << it->second << endl;
-	}
-
-
-	assemblyFile.close();
-
-	string pathToMachineCode = createMachineCodePath(pathToAsmProgram);
-	string assemblyResult = createMachineCode(assemblyProgramm, pathToMachineCode);
-	cout << assemblyResult;
 	createPause("Нажмите enter что бы начать выполнение...");
 	executeProgramm(pathToMachineCode);
 
 	_getch();
+}
+
+void firstPassage() {
+	createFileReader();
+	string assemblyInstr;
+	int currentCommand = 0;
+	while (getline(fileReader, assemblyInstr))
+	{
+		if (isMark(assemblyInstr)) {
+			marksTable.insert(pair<string, int>(cutOffCharacterFromStr(assemblyInstr, ':'), currentCommand));
+		}
+		else {
+			assemblyProgramm.push_back(parseOneAssemblyCommand(myTrim(assemblyInstr)));
+		}
+		currentCommand += 4;
+	}
+	fileReader.close();
+}
+
+bool isMark(string& assemblyInstr) {
+	return !findCharInString(assemblyInstr, ' ')
+		&& !findCharInString(assemblyInstr, ',')
+		&& findCharInString(assemblyInstr, ':')
+		&& assemblyInstr.length() > 1;
 }
 
 void createPause(string message) {
@@ -55,35 +58,20 @@ void createPause(string message) {
 	cin.get();
 }
 
-ifstream createFileReader(string& pathToAsmProgramm) {
-	ifstream fileReader;
+
+void createFileReader() {
 	cout << "Введите полное имя файла с программой на ассемблере: ";
 	cin >> pathToAsmProgramm;
 	fileReader.open(pathToAsmProgramm);
-	while (fileReader.is_open() == 0) {
+	while (!fileReader.is_open()) {
 		cout << "Файла с укзанным именем не существует. Пожалуйста, введите другое имя: ";
 		cin >> pathToAsmProgramm;
 		fileReader.open(pathToAsmProgramm);
 	}
-	return fileReader;
 }
 
-string createMachineCodePath(string& pathToAsmProgram) {
-	istringstream iss(pathToAsmProgram);
-	string sub;
-	int i = 0;
-	string path;
-	string extension;
-	while (getline(iss, sub, '.')) {
-		if (i == 0) {
-			path = sub;
-		}
-		if (i == 1) {
-			extension = sub;
-		}
-		i++;
-	}
-	return path + "MachineCode." + extension;
+string createMachineCodePath() {
+	return cutOffCharacterFromStr(pathToAsmProgramm, '.') + ".dat";
 }
 
 vector<string> parseOneAssemblyCommand(string& assemblyInstruction) {
@@ -106,89 +94,103 @@ vector<string> parseOneAssemblyCommand(string& assemblyInstruction) {
 	return tmp;
 }
 
-bool findCharInString(string& s, char c) {
-	for (int i = 0; i < s.length(); i++) {
-		if (s[i] == c)
+bool findCharInString(string& str, char c) {
+	for (char character : str) {
+		if (character == c)
 			return true;
 	}
 	return false;
 }
 
-string createMachineCode(vector<vector<string>>& assemblyInstractions, string& path) {
-	string machineCode;
-	ofstream out(path);
+void createMachineCode(string& path) {
+	ofstream out(path, ios_base::out | ios_base::binary);
 
-	for (int i = 0; i < assemblyInstractions.size(); i++) {
-		for (int j = 0; j < assemblyInstractions[i].size(); j++) {
-			cout << assemblyInstractions[i][j] << "  ";
-		}
-		cout << endl;
-	}
+	string compiledStatus;
+	int machineCode;
+	for (int instr = 0; instr < assemblyProgramm.size(); instr++) {
 
-	for (int i = 0; i < assemblyInstractions.size(); i++) {
-
-		if (isIType(assemblyInstractions[i][0])) {
-			if (isICorrect(assemblyInstractions[i])) {
-				machineCode += convertIToMachineCode(assemblyInstractions[i]);
+		if (isIType(assemblyProgramm[instr][OPCODE_POS])) {
+			if (isICorrect(assemblyProgramm[instr])) {
+				machineCode = convertIToMachineCode(assemblyProgramm[instr]);
 			}
 			else {
-				return  "syntax error i on line: " + to_string(i + 1)+'\n';
+				compiledStatus =  "syntax error i on line: " + to_string(instr + 1)+'\n';
 			}
 		}
-		else if (isRType(assemblyInstractions[i][0])) {
-			if (isRCorrect(assemblyInstractions[i])) {
-				machineCode += convertRToMachineCode(assemblyInstractions[i]);
+		else if (isRType(assemblyProgramm[instr][OPCODE_POS])) {
+			if (isRCorrect(assemblyProgramm[instr])) {
+				machineCode = convertRToMachineCode(assemblyProgramm[instr]);
 			}
 			else {
-				return  "syntax error r on line: " + to_string(i + 1) + '\n';
+				compiledStatus = "syntax error r on line: " + to_string(instr + 1) + '\n';
 			}
 		}
-		else if (isJType(assemblyInstractions[i][0])){
-			if (isJCorrect(assemblyInstractions[i])) {
-				machineCode += convertJToMachineCode(assemblyInstractions[i]);
+		else if (isJType(assemblyProgramm[instr][OPCODE_POS])){
+			if (isJCorrect(assemblyProgramm[instr])) {
+				machineCode = convertJToMachineCode(assemblyProgramm[instr]);
 			}
 			else {
-				return  "syntax error j on line: " + to_string(i + 1) + '\n';
+				compiledStatus =  "syntax error j on line: " + to_string(instr + 1) + '\n';
+			}
+		}
+		else if (isRTType(assemblyProgramm[instr][OPCODE_POS])) {
+			if (isRTCorrect(assemblyProgramm[instr])) {
+				machineCode = convertRTToMachineCode(assemblyProgramm[instr]);
+			}
+			else {
+				compiledStatus = "syntax error j on line: " + to_string(instr + 1) + '\n';
+			}
+		}
+		else if (isUType(assemblyProgramm[instr][OPCODE_POS])) {
+			if (isUCorrect(assemblyProgramm[instr])) {
+				machineCode = convertUToMachineCode(assemblyProgramm[instr]);
+			}
+			else {
+				compiledStatus = "syntax error j on line: " + to_string(instr + 1) + '\n';
 			}
 		}
 		else {
-			return  "syntax error on line: " + to_string(i + 1) + '\n';
+			compiledStatus = "syntax error on line: " + to_string(instr + 1) + '\n';
 		}
 
-		//reverse(machineCode);
-		out << machineCode;
-		machineCode = "";
-		out << '\n';
-		if (i == assemblyInstractions.size() - 1) {
-			out << "00000000000000000000000000000000";                     //32 нуля - halt.
+		out.write((char*) &machineCode, sizeof machineCode);
+		machineCode = 0;
+
+		if (instr == assemblyProgramm.size() - 1) {
+			int temp = 0;                                            // last command - halt.
+		    out.write((char*)&temp, sizeof temp);
 		}
 	}
 
 	out.close();
-	return "program compiled successfully\n";
+
+	compiledStatus = "program compiled successfully\n";
+	cout << compiledStatus;
 }
 
-bool isIType(string& command) {
-	for (int i = 0; i < ICOMMANDS_SIZE; i++) {
-		if (command == iCommands[i]) {
-			return true;
-		}
-	}
-	return false;
+bool isIType(string& commandName) {
+	return isThisType(iCommands, ICOMMANDS_COUNT, commandName);
 }
 
-bool isRType(string& command) {
-	for (int i = 0; i < RCOMMANDS_SIZE; i++) {
-		if (command == rCommands[i]) {
-			return true;
-		}
-	}
-	return false;
+bool isRType(string& commandName) {
+	return isThisType(rCommands, RCOMMANDS_COUNT, commandName);
 }
 
-bool isJType(string& command) {
-	for (int i = 0; i < JCOMMANDS_SIZE; i++) {
-		if (command == jCommands[i]) {
+bool isRTType(string& commandName) {
+	return isThisType(rtCommands, RTCOMMANDS_COUNT, commandName);
+}
+
+bool isJType(string& commandName) {
+	return isThisType(jCommands, JCOMMANDS_COUNT, commandName);
+}
+
+bool isUType(string& commandName) {
+	return isThisType(uCommands, UCOMMANDS_COUNT, commandName);
+}
+
+bool isThisType(const string* thisTypeCommands, int thisTypeCommandsCount, string& commandName) {
+	for (int command = 0; command < thisTypeCommandsCount; command++) {
+		if (commandName == thisTypeCommands[command]) {
 			return true;
 		}
 	}
@@ -196,155 +198,142 @@ bool isJType(string& command) {
 }
 
 bool isJCorrect(vector<string>& assmInstr) {
-	return assmInstr.size() == 2 && handleJOperands(assmInstr[1]);
+	return assmInstr.size() == JCOMMANDS_FIELDS_COUNT && handleJOperands(assmInstr);
 }
 
 bool isICorrect(vector<string>& assmInstr) {
-	return assmInstr.size() == 4 && handleIOperands(assmInstr);
+	return assmInstr.size() == ICOMMANDS_FIELDS_COUNT && handleIOperands(assmInstr);
 }
 
 bool isRCorrect(vector<string>& assmInstr) {
-	bool res;
-	if (assmInstr[0] == "jr" || assmInstr[0] == "print") {
-		res = isRSizeCorrect(assmInstr) && handleROperands(assmInstr);
-	}
-	else {
-		res = isRSizeCorrect(assmInstr) && handleROperands(assmInstr);
-	}
-	return res;
+	return assmInstr.size() == RCOMMANDS_FIELDS_COUNT && handleROperands(assmInstr);
 }
 
-bool isRSizeCorrect(vector<string>& assmInstr) {
-	return (assmInstr[0] == "jr" && assmInstr.size() == 2) || 
-		(assmInstr[0] != "jr" && assmInstr.size() == 4 && assmInstr[0] != "print") || (assmInstr[0] == "print" && assmInstr.size() == 2);
+bool isRTCorrect(vector<string>& assmInstr) {
+	return assmInstr.size() == RTCOMMANDS_FIELDS_COUNT && handleRTOperands(assmInstr);
 }
 
-bool handleJOperands(string& arg) {
-	if (isMark(arg))
-		return true;
-	return false;
+bool isUCorrect(vector<string>& assmInstr) {
+	return assmInstr.size() == UCOMMANDS_FIELDS_COUNT && handleUOperands(assmInstr);
+}
+
+bool handleJOperands(vector<string>& assmInstr) {
+	return isInMarksTable(assmInstr[RR_POS]);
 }
 
 bool handleIOperands(vector<string>& assmInstr) {
-	if (assmInstr[0] == "beq" || assmInstr[0] == "bne") {
-		if (isRegister(assmInstr[1]) && isRegister(assmInstr[2]) && isMark(assmInstr[3])) {
-			return true;
-		}
-	}
-	else {
-		if (isRegister(assmInstr[1]) && isRegister(assmInstr[2]) && isArgDigit(assmInstr[3]))
-			return true;
-	}
-	return false;
+	return isRegister(assmInstr[RR_POS]) && isRegister(assmInstr[RS_POS]) && isArgDigit(assmInstr[IMM_POS]);
 }
 
 bool handleROperands(vector<string>& assmInstr) {
-	if (assmInstr[0] == "jr" || assmInstr[0] == "print") {
-		if (isRegister(assmInstr[1]))
-			return true;
-	}
-	else {
-		if (isRegister(assmInstr[1]) && isRegister(assmInstr[2]) && isRegister(assmInstr[3]))
-			return true;
-	}
-	return false;
+	return isRegister(assmInstr[RR_POS]) && isRegister(assmInstr[RS_POS]) && isRegister(assmInstr[RT_POS]);
 }
 
-bool isRegister(string& arg) {
-	for (int i = 0; i < REG_SIZE; i++)
+bool handleRTOperands(vector<string>& assmInstr) {
+	return isRegister(assmInstr[RR_POS]);
+}
+
+bool handleUOperands(vector<string>& assmInstr) {
+	return isRegister(assmInstr[RR_POS]) && isRegister(assmInstr[RS_POS]) && isInMarksTable(assmInstr[IMM_POS]);
+}
+
+bool isRegister(string& registerName) {
+	for (string reg : registersCodes)
 	{
-		if (registersCodes[i] == arg) {
+		if (reg == registerName) {
 			return true;
 		}
 	}
 	return false;
 }
 
-bool isMark(string& arg) {
-	string mark = arg + ':';
-	if (marksTable.count(mark)) {
+bool isInMarksTable(string& arg) {
+	if (marksTable.count(arg)) {
 		return true;
 	}
 	return false;
 }
 
 bool isArgDigit(string& arg) {
-	for (int i = 0; i < arg.length(); i++) {
-		if (i == 0 && arg[i] == '-') continue;
-		if (!isdigit(arg[i])) {
+	for (int character = 0; character < arg.length(); character++) {
+		if (character == 0 && arg[character] == '-') continue;
+		if (!isdigit(arg[character])) {
 			return false;
 		}
 	}
 	return true;
 }
 
-string convertJToMachineCode(vector<string>& assmInstr) {
-	cout << "convert j"<<endl;
-	string opcode = toBinaryCode(getNumberOfCommand(assmInstr[0]), OPCODE_LENGTH);
-	string addr = toBinaryCode(marksTable.find(assmInstr[1]+':')->second, IMM);                   // адреc
-	return opcode + addr +"00000000000";
+int convertJToMachineCode(vector<string>& assmInstr) {
+	int opcode = getOpcode(assmInstr[OPCODE_POS]);
+	int addr = getAddr(assmInstr[MARK_POS]);
+	return opcode | addr;
 }
 
-string convertIToMachineCode(vector<string>& assmInstr) {
-	cout << "convert i" << endl;
-	string opcode = toBinaryCode(getNumberOfCommand(assmInstr[0]), OPCODE_LENGTH);
-	string rr = toBinaryCode(getNumberOfReg(assmInstr[1]), REGCODE_LENGTH);                   // регистр-назначение
-	string rs = toBinaryCode(getNumberOfReg(assmInstr[2]), REGCODE_LENGTH);                   // регистр-источник
-	// константный аргумент
-	string constant;
-	if (assmInstr[0] == "beq" || assmInstr[0] == "bne") {
-		constant = toBinaryCode(marksTable.find(assmInstr[3] + ':')->second, IMM);
-	}
-	else {
-		constant = toBinaryCode(stoi(assmInstr[3]), IMM);
-	}
-	return opcode + rr + rs + constant+"000";
+int convertIToMachineCode(vector<string>& assmInstr) {
+	int opcode = getOpcode(assmInstr[OPCODE_POS]);
+	int rr = getOperand(assmInstr[RR_POS], RR_POS);
+	int rs = getOperand(assmInstr[RS_POS], RS_POS);
+	int imm = getConstant(assmInstr[IMM_POS]);
+	return opcode | rr | rs | imm;
 }
 
-string convertRToMachineCode(vector<string>& assmInstr) {
-	cout << "convert r" << assmInstr[0]<<endl;
-	string result;
-	string opcode = toBinaryCode(getNumberOfCommand(assmInstr[0]), OPCODE_LENGTH);                                         // 5 bits
-	string rr = toBinaryCode(getNumberOfReg(assmInstr[1]), REGCODE_LENGTH);   // регистр назначение 4 bits
-	if (!assmInstr[0].compare("jr") || !assmInstr[0].compare("print")) {
-		cout << "yesss" << endl;
-		return opcode + rr
-			+ "00000000000000000000000";                                      // 23 нуля - 23 bits
-	}
-	string rs = toBinaryCode(getNumberOfReg(assmInstr[2]), REGCODE_LENGTH);   // первый регистр источник 5 bits
-	string rt = toBinaryCode(getNumberOfReg(assmInstr[3]), REGCODE_LENGTH);   // второй регистр источник 5 bits
-	return opcode + rr + rs + rt + "000000000000000";                     //15 нулей
+int convertRToMachineCode(vector<string>& assmInstr) {                            
+	int opcode = getOpcode(assmInstr[OPCODE_POS]);
+	int rr = getOperand(assmInstr[RR_POS], RR_POS);
+	int rs = getOperand(assmInstr[RS_POS], RS_POS);
+	int rt = getOperand(assmInstr[RS_POS], RS_POS);
+	return opcode | rr | rs | rt;                     
 }
 
-int getNumberOfCommand(string& command) {
-	for (int i = 0; i < COMMANDS_SIZE; i++) {
-		if (command == commands[i]) {
+int convertRTToMachineCode(vector<string>& assmInstr) {
+	int opcode = getOpcode(assmInstr[OPCODE_POS]);
+	int rr = getOperand(assmInstr[RR_POS], RR_POS);
+	return opcode | rr;
+}
+
+int convertUToMachineCode(vector<string>& assmInstr) {
+	int opcode = getOpcode(assmInstr[OPCODE_POS]);
+	int rr = getOperand(assmInstr[RR_POS], RR_POS);
+	int rs = getOperand(assmInstr[RS_POS], RS_POS);
+	int addr = getAddr(assmInstr[MARK_POS]);
+	return opcode | rr | rs | addr;
+}
+
+int getOpcode(string& commandName) {
+	int numberOfComand = getNumberFromArray(commandName, commands, COMMANDS_COUNT);
+	return shift(numberOfComand, 32 - OPCODE_LENGTH);
+}
+
+int getOperand(string& regName, int regPos) {
+	int numberOfReg = getNumberFromArray(regName, registersCodes, REG_COUNT);
+	return shift(numberOfReg, 32 - (OPCODE_LENGTH + regPos * REGCODE_LENGTH));
+}
+
+int getAddr(string& mark) {
+	int numberOfMark = marksTable.find(mark)->second;
+	return shift(numberOfMark, 32 - (OPCODE_LENGTH + IMM));
+}
+
+int getConstant(string& imm) {
+	int constant = stoi(imm);
+	return shift(constant, 32 - (OPCODE_LENGTH + 2 * REGCODE_LENGTH + IMM));
+}
+
+int getNumberFromArray(string& value, const string* arr, int arrLength) {
+	for (int i = 0; i < arrLength; i++) {
+		if (value == arr[i]) {
 			return i;
 		}
 	}
 }
 
-int getNumberOfReg(string& arg) {
-	for (int i = 0; i < REG_SIZE; i++) {
-		if (arg == registersCodes[i]) {
-			return i;
-		}
+int shift(int shifted, int shiftValue) {
+	int result = shifted;
+	for (int i = 0; i < shiftValue; i++) {
+		result = result << 1;
 	}
-}
-
-string toBinaryCode(int number, int sizeOfBinaryField) {
-	string binary;
-	for (int i = 0; i < sizeOfBinaryField; i++ ){
-		if (number % 2 == 0) {
-			binary += '0';
-		}
-		else {
-			binary += '1';
-		}
-		number /= 2;
-	}
-	reverse(binary);
-	return binary;
+	return result;
 }
 
 void reverse(string &s)
@@ -361,29 +350,33 @@ void reverse(string &s)
 
 string myTrim(string& str)
 {
-	int i = 0;
+	string trimmed = ltrim(str);
+	reverse(trimmed);
+	trimmed = ltrim(trimmed);
+	reverse(trimmed);
+	return trimmed;
+}
+
+string ltrim(string& str) {
+	int afterSpaces = 0;
 	for (char c : str)
 	{
 		if (!isspace(c))
 			break;
-		i++;
+		afterSpaces++;
 	}
+	return str.substr(afterSpaces, (str.length() - afterSpaces));
+}
 
-	string trimmed = str.substr(i, (str.length() - i));
-	reverse(trimmed);
-
-	i = 0;
-	for (char c : trimmed)
+string cutOffCharacterFromStr(string& str, char character) {
+	int beforeDot = 0;
+	for (char c : str)
 	{
-		if (!isspace(c))
+		if (c == character)
 			break;
-		i++;
+		beforeDot++;
 	}
-
-	trimmed = trimmed.substr(i, (trimmed.length()-i));
-
-	reverse(trimmed);
-	return trimmed;
+	return str.substr(0, beforeDot);
 }
 
 
