@@ -35,7 +35,7 @@ void firstPassage() {
 	while (getline(fileReader, assemblyInstr))
 	{
 		if (isMark(assemblyInstr)) {
-			marksTable.insert(pair<string, int>(cutOffCharacterFromStr(assemblyInstr, ':'), currentCommand));
+			marksTable[cutOffCharacterFromStr(assemblyInstr, ':')] = currentCommand;
 		}
 		else {
 			assemblyProgramm.push_back(parseOneAssemblyCommand(myTrim(assemblyInstr)));
@@ -107,6 +107,7 @@ void createMachineCode(string& path) {
 
 	string compiledStatus;
 	int machineCode;
+
 	for (int instr = 0; instr < assemblyProgramm.size(); instr++) {
 
 		if (isIType(assemblyProgramm[instr][OPCODE_POS])) {
@@ -158,7 +159,7 @@ void createMachineCode(string& path) {
 
 		if (instr == assemblyProgramm.size() - 1) {
 			int temp = 0;                                            // last command - halt.
-		    out.write((char*)&temp, sizeof temp);
+		    out.write((char*)&temp, sizeof(int));
 		}
 	}
 
@@ -234,7 +235,7 @@ bool handleRTOperands(vector<string>& assmInstr) {
 }
 
 bool handleUOperands(vector<string>& assmInstr) {
-	return isRegister(assmInstr[RR_POS]) && isRegister(assmInstr[RS_POS]) && isInMarksTable(assmInstr[IMM_POS]);
+	return isRegister(assmInstr[RR_POS]) && isRegister(assmInstr[RS_POS]) && isInMarksTable(assmInstr[MARK_POS]);
 }
 
 bool isRegister(string& registerName) {
@@ -250,6 +251,7 @@ bool isRegister(string& registerName) {
 bool isInMarksTable(string& arg) {
 	if (marksTable.count(arg)) {
 		return true;
+		
 	}
 	return false;
 }
@@ -266,7 +268,7 @@ bool isArgDigit(string& arg) {
 
 int convertJToMachineCode(vector<string>& assmInstr) {
 	int opcode = getOpcode(assmInstr[OPCODE_POS]);
-	int addr = getAddr(assmInstr[MARK_POS]);
+	int addr = getAddr(assmInstr[RR_POS]);
 	return opcode | addr;
 }
 
@@ -282,7 +284,7 @@ int convertRToMachineCode(vector<string>& assmInstr) {
 	int opcode = getOpcode(assmInstr[OPCODE_POS]);
 	int rr = getOperand(assmInstr[RR_POS], RR_POS);
 	int rs = getOperand(assmInstr[RS_POS], RS_POS);
-	int rt = getOperand(assmInstr[RS_POS], RS_POS);
+	int rt = getOperand(assmInstr[RT_POS], RT_POS);
 	return opcode | rr | rs | rt;                     
 }
 
@@ -296,7 +298,7 @@ int convertUToMachineCode(vector<string>& assmInstr) {
 	int opcode = getOpcode(assmInstr[OPCODE_POS]);
 	int rr = getOperand(assmInstr[RR_POS], RR_POS);
 	int rs = getOperand(assmInstr[RS_POS], RS_POS);
-	int addr = getAddr(assmInstr[MARK_POS]);
+	int addr = getAddrOfMark(assmInstr[MARK_POS]);
 	return opcode | rr | rs | addr;
 }
 
@@ -311,13 +313,20 @@ int getOperand(string& regName, int regPos) {
 }
 
 int getAddr(string& mark) {
-	int numberOfMark = marksTable.find(mark)->second;
+	int numberOfMark = marksTable[mark];
 	return shift(numberOfMark, 32 - (OPCODE_LENGTH + IMM));
+}
+
+int getAddrOfMark(string& mark) {
+	int numberOfMark = marksTable[mark];
+	return shift(numberOfMark, 32 - (OPCODE_LENGTH + 2 * REGCODE_LENGTH + IMM));
 }
 
 int getConstant(string& imm) {
 	int constant = stoi(imm);
-	return shift(constant, 32 - (OPCODE_LENGTH + 2 * REGCODE_LENGTH + IMM));
+	int temp = 0x00FF;
+	int temp2 = constant & temp;
+	return shift(temp2, 32 - (OPCODE_LENGTH + 2 * REGCODE_LENGTH + IMM));
 }
 
 int getNumberFromArray(string& value, const string* arr, int arrLength) {

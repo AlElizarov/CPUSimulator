@@ -49,34 +49,41 @@ int convertRTToMachineCode(vector<string>&);
 int convertUToMachineCode(vector<string>&);
 
 int shift(int shifted, int shiftValue);
-
 void reverse(string&);
 string myTrim(string&);
 string ltrim(string&);
 string cutOffCharacterFromStr(string&, char);
+bool findCharInString(string& str, char c);
+
+int getOpcode(string& commandName);
+int getOperand(string& regName, int regPos);
+int getAddr(string& mark);
+int getAddrOfMark(string& mark);
+int getConstant(string& imm);
+int getNumberFromArray(string& value, const string* arr, int arrLength);
 
 //simulator functions
-void readCommand();
+//void readCommand();
 void executeProgramm(string&);
 void loadProgramm(ifstream&);
 
-void deshifrCommand();
-
-void getOpcode();
-void getJOperands();
-void getIOperands();
-void getROperands();
-
-int fromBinaryToInt(string&);
-void getImm();
-void getRR();
-void getRS();
-void getRT();
-
-bool isJOpcode();
-bool isIOpcode();
-
-bool findCharInString(string&, char);
+//void deshifrCommand();
+//
+//void getOpcode();
+//void getJOperands();
+//void getIOperands();
+//void getROperands();
+//
+//int fromBinaryToInt(string&);
+//void getImm();
+//void getRR();
+//void getRS();
+//void getRT();
+//
+//bool isJOpcode();
+//bool isIOpcode();
+//
+//bool findCharInString(string&, char);
 
 //assembly constants
 int const OPCODE_POS = 0;
@@ -84,7 +91,7 @@ int const RR_POS = 1;
 int const RS_POS = 2;
 int const RT_POS = 3;
 int const IMM_POS = 3;
-int const MARK_POS = 1;
+int const MARK_POS = 3;
 
 int const RCOMMANDS_FIELDS_COUNT = 4;
 int const ICOMMANDS_FIELDS_COUNT = 4;
