@@ -191,7 +191,7 @@ bool isUType(string& commandName) {
 
 bool isThisType(const string* thisTypeCommands, int thisTypeCommandsCount, string& commandName) {
 	for (int command = 0; command < thisTypeCommandsCount; command++) {
-		if (commandName == thisTypeCommands[command]) {
+		if (commandName.compare(thisTypeCommands[command]) == 0) {
 			return true;
 		}
 	}
@@ -241,7 +241,7 @@ bool handleUOperands(vector<string>& assmInstr) {
 bool isRegister(string& registerName) {
 	for (string reg : registersCodes)
 	{
-		if (reg == registerName) {
+		if (reg.compare(registerName) == 0) {
 			return true;
 		}
 	}
@@ -268,7 +268,7 @@ bool isArgDigit(string& arg) {
 
 int convertJToMachineCode(vector<string>& assmInstr) {
 	int opcode = getOpcode(assmInstr[OPCODE_POS]);
-	int addr = getAddr(assmInstr[RR_POS]);
+	int addr = getAddrJ(assmInstr[RR_POS]);
 	return opcode | addr;
 }
 
@@ -298,46 +298,46 @@ int convertUToMachineCode(vector<string>& assmInstr) {
 	int opcode = getOpcode(assmInstr[OPCODE_POS]);
 	int rr = getOperand(assmInstr[RR_POS], RR_POS);
 	int rs = getOperand(assmInstr[RS_POS], RS_POS);
-	int addr = getAddrOfMark(assmInstr[MARK_POS]);
+	int addr = getAddrU(assmInstr[MARK_POS]);
 	return opcode | rr | rs | addr;
 }
 
 int getOpcode(string& commandName) {
 	int numberOfComand = getNumberFromArray(commandName, commands, COMMANDS_COUNT);
-	return shift(numberOfComand, 32 - OPCODE_LENGTH);
+	return leftShift(numberOfComand, CAPACITY - OPCODE_LENGTH);
 }
 
 int getOperand(string& regName, int regPos) {
 	int numberOfReg = getNumberFromArray(regName, registersCodes, REG_COUNT);
-	return shift(numberOfReg, 32 - (OPCODE_LENGTH + regPos * REGCODE_LENGTH));
+	return leftShift(numberOfReg, CAPACITY - (OPCODE_LENGTH + regPos * REGCODE_LENGTH));
 }
 
-int getAddr(string& mark) {
+int getAddrJ(string& mark) {
 	int numberOfMark = marksTable[mark];
-	return shift(numberOfMark, 32 - (OPCODE_LENGTH + IMM));
+	return leftShift(numberOfMark, CAPACITY - (OPCODE_LENGTH + IMM));
 }
 
-int getAddrOfMark(string& mark) {
+int getAddrU(string& mark) {
 	int numberOfMark = marksTable[mark];
-	return shift(numberOfMark, 32 - (OPCODE_LENGTH + 2 * REGCODE_LENGTH + IMM));
+	return leftShift(numberOfMark, CAPACITY - (OPCODE_LENGTH + 2 * REGCODE_LENGTH + IMM));
 }
 
 int getConstant(string& imm) {
 	int constant = stoi(imm);
 	int mask = 0x0000FFFF;
 	int constant16Bits = constant & mask;
-	return shift(constant16Bits, 32 - (OPCODE_LENGTH + 2 * REGCODE_LENGTH + IMM));
+	return leftShift(constant16Bits, CAPACITY - (OPCODE_LENGTH + 2 * REGCODE_LENGTH + IMM));
 }
 
 int getNumberFromArray(string& value, const string* arr, int arrLength) {
 	for (int i = 0; i < arrLength; i++) {
-		if (value == arr[i]) {
+		if (value.compare(arr[i]) == 0) {
 			return i;
 		}
 	}
 }
 
-int shift(int shifted, int shiftValue) {
+int leftShift(int shifted, int shiftValue) {
 	int result = shifted;
 	for (int i = 0; i < shiftValue; i++) {
 		result = result << 1;
