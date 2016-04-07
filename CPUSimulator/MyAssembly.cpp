@@ -324,9 +324,9 @@ int getAddrOfMark(string& mark) {
 
 int getConstant(string& imm) {
 	int constant = stoi(imm);
-	int temp = 0x00FF;
-	int temp2 = constant & temp;
-	return shift(temp2, 32 - (OPCODE_LENGTH + 2 * REGCODE_LENGTH + IMM));
+	int mask = 0x0000FFFF;
+	int constant16Bits = constant & mask;
+	return shift(constant16Bits, 32 - (OPCODE_LENGTH + 2 * REGCODE_LENGTH + IMM));
 }
 
 int getNumberFromArray(string& value, const string* arr, int arrLength) {

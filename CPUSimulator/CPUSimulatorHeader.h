@@ -48,19 +48,19 @@ int convertRToMachineCode(vector<string>&);
 int convertRTToMachineCode(vector<string>&);
 int convertUToMachineCode(vector<string>&);
 
-int shift(int shifted, int shiftValue);
+int shift(int, int);
 void reverse(string&);
 string myTrim(string&);
 string ltrim(string&);
 string cutOffCharacterFromStr(string&, char);
-bool findCharInString(string& str, char c);
+bool findCharInString(string&, char);
 
-int getOpcode(string& commandName);
-int getOperand(string& regName, int regPos);
-int getAddr(string& mark);
-int getAddrOfMark(string& mark);
-int getConstant(string& imm);
-int getNumberFromArray(string& value, const string* arr, int arrLength);
+int getOpcode(string&);
+int getOperand(string&, int);
+int getAddr(string&);
+int getAddrOfMark(string&);
+int getConstant(string&);
+int getNumberFromArray(string&, const string*, int);
 
 //simulator functions
 //void readCommand();
@@ -101,12 +101,12 @@ int const UCOMMANDS_FIELDS_COUNT = 4;
 
 int const REG_COUNT = 16;
 
+int const COMMANDS_COUNT = 23;
 int const ICOMMANDS_COUNT = 5;
 int const RCOMMANDS_COUNT = 12;
-int const RTCOMMANDS_COUNT = 12;
+int const RTCOMMANDS_COUNT = 2;
 int const JCOMMANDS_COUNT = 2;
 int const UCOMMANDS_COUNT = 2;
-int const COMMANDS_COUNT = 23;
 
 int const OPCODE_LENGTH = 5;
 int const REGCODE_LENGTH = 4;
@@ -140,7 +140,7 @@ string const rCommands[RCOMMANDS_COUNT] = { "add", "sub", "div", "and", "or", "x
 string const rtCommands[RTCOMMANDS_COUNT] = { "jr", "print"};
 string const jCommands[JCOMMANDS_COUNT] = { "j", "jal" };
 string const commands[COMMANDS_COUNT] = { "add", "sub", "mul", "div", "and", "or", "xor", "nor", "slt",
-"sll", "srl", "sra", "jr", "print", "addi", "lw", "sw", "andi", "ori", "beq", "bne", "j", "jal" };
+"sll", "srl", "sra", "jr", "print", "addi", "lw", "sw", "andi", "ori", "beq", "bne", "j", "jal"};
 
 
 //simulator constants
