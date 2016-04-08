@@ -2,7 +2,6 @@
 #include <fstream>
 #include <sstream>
 #include <conio.h>
-#include <clocale>
 #include <map>
 #include "CPUSimulatorHeader.h"
 
@@ -14,15 +13,13 @@ string pathToAsmProgramm;
 ifstream fileReader;
 
 int main() {
-	setlocale(LC_ALL, "Russian");
-
 	firstPassage();                                               
-	createPause("Нажмите enter что бы начать компиляцию...");
+	createPause("Press enter to compile...");
 
 	string pathToMachineCode = createMachineCodePath();                
 	createMachineCode(pathToMachineCode);                    // second passage
 
-	createPause("Нажмите enter что бы начать выполнение...");
+	createPause("Press enter to start...");
 	executeProgramm(pathToMachineCode);
 
 	_getch();
@@ -39,8 +36,8 @@ void firstPassage() {
 		}
 		else {
 			assemblyProgramm.push_back(parseOneAssemblyCommand(myTrim(assemblyInstr)));
+			currentCommand += 4;
 		}
-		currentCommand += 4;
 	}
 	fileReader.close();
 }
@@ -60,11 +57,11 @@ void createPause(string message) {
 
 
 void createFileReader() {
-	cout << "Введите полное имя файла с программой на ассемблере: ";
+	cout << "Enter the full name of the file with a program in assembly language: ";
 	cin >> pathToAsmProgramm;
 	fileReader.open(pathToAsmProgramm);
 	while (!fileReader.is_open()) {
-		cout << "Файла с укзанным именем не существует. Пожалуйста, введите другое имя: ";
+		cout << "File with the specified name does not exist. Please enter a different name: ";
 		cin >> pathToAsmProgramm;
 		fileReader.open(pathToAsmProgramm);
 	}

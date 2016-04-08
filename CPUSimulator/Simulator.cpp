@@ -7,9 +7,10 @@
 
 using namespace std;
 
-int pc = 0;
+short pc = TEXT_SEGMENT_SIZE_START;
 int ram[RAM_SIZE];
 short registers[REG_COUNT];
+int runningStatus;
 
 struct Instraction {
 	int command;
@@ -17,7 +18,7 @@ struct Instraction {
 	unsigned short rr;
 	unsigned short rs;
 	unsigned short rt;
-	unsigned short imm;
+	short imm;
 };
 
 Instraction instaction;
@@ -27,17 +28,23 @@ void executeProgramm(string& pathToMachineCode) {
 	ifstream fileReader;
 	fileReader.open(pathToMachineCode);
 	loadProgramm(fileReader);
+
+	registers[14] = GLOBAL_DATA_SEGMENT_SIZE_START;
+	registers[15] = RAM_SIZE - 1;
+	registers[16] = DYNAMIC_DATA_SEGMENT_SIZE_START;
 	
 	while (readCommand()) {
 		pc = pc + TO_PC;
 		decriptCommand();
 		executeCommand();
+		if (runningStatus != 0) {
+			break;
+		}
 	}
-	pc = 0;
+	pc = TEXT_SEGMENT_SIZE_START;
 	fileReader.close();
 
-	cout << "result:" << endl;
-	cout << "$s0 = " << registers[1] << " $s1 = " << registers[2];
+	cout << messgesAfterRun[runningStatus];
 }
 
 void loadProgramm(ifstream& fileReader) {
@@ -46,10 +53,6 @@ void loadProgramm(ifstream& fileReader) {
 	while (fileReader.read((char*)& commandToMemory, sizeof(int))) {
 		ram[startAdress] = commandToMemory;
 		startAdress = startAdress + TO_PC;
-	}
-
-	for (int i = 0; i < startAdress; i = i + TO_PC) {
-		cout << "bin: " << ram[i] << endl;
 	}
 }
 
@@ -61,24 +64,19 @@ bool readCommand() {
 void decriptCommand() {
 	separateOpcode();
 	if (isJOpcode()) {
-		cout << "yes j"<<endl;
 		getJOperands();
 	}
 	else if (isIOpcode()) {
 		getIOperands();
-		cout << "yes i" << endl;
 	}
 	else if(isROpcode()) {
 		getROperands();
-		cout << "yes r" << endl;
 	}
 	else if (isRTOpcode()) {
 		getRTOperands();
-		cout << "yes rt" << endl;
 	}
 	else {
 		getUOperands();
-		cout << "yes u" << endl;
 	}
 }
 
@@ -116,7 +114,7 @@ void getIOperands() {
 }
 
 void separateImm() {
-	int mask = 0x0007FFF8;
+	int mask = 0x0001FFFE;
 	int shift = CAPACITY - (OPCODE_LENGTH + 2 * REGCODE_LENGTH + IMM);
 	instaction.imm = separate(mask, shift);
 }
@@ -144,19 +142,19 @@ void getUOperands() {
 }
 
 void getRR() {
-	int mask = 0x07800000;
+	int mask = 0x07C00000;
 	int shift = CAPACITY - (OPCODE_LENGTH + REGCODE_LENGTH);
 	instaction.rr = separate(mask, shift);
 }
 
 void getRS() {
-	int mask = 0x00780000;
+	int mask = 0x003E0000;
 	int shift = CAPACITY - (OPCODE_LENGTH + 2 * REGCODE_LENGTH);
 	instaction.rs = separate(mask, shift);
 }
 
 void getRT() {
-	int mask = 0x00078000;
+	int mask = 0x00001F00;
 	int shift = CAPACITY - (OPCODE_LENGTH + 3 * REGCODE_LENGTH);
 	instaction.rt = separate(mask, shift);
 }
@@ -184,7 +182,8 @@ void executeCommand() {
 
 	int mask;
 	int shift;
-	cout <<"opcode = "<<instaction.opcode<< " rr = " << rr << " rs = " << rs << " rt = " << rt << " imm = " << imm<<endl;
+	int addr;
+	bool comparisonResult;
 	switch (instaction.opcode)
 	{
 	case 0:
@@ -234,17 +233,54 @@ void executeCommand() {
 		pc = registers[rr];
 		break;
 	case 13:
-		cout << registers[rr];
+		cout << registers[rr]<<endl;
 		break;
 	case 14:
 		registers[rr] = registers[rs] + imm;
 		break;
 	case 15:
-
+		addr = registers[rs] + imm;
+		if (addr < DYNAMIC_DATA_SEGMENT_SIZE_START || addr >= RAM_SIZE) {
+			runningStatus = 1;
+		}
+		else {
+			registers[rr] = ram[addr];
+		}
 		break;
 	case 16:
+		addr = registers[rs] + imm;
+		if (addr < DYNAMIC_DATA_SEGMENT_SIZE_START || addr >= RAM_SIZE) {
+			runningStatus = 1;
+		}
+		else {
+			ram[addr] = registers[rr];
+		}
+		break;
+	case 17:
+		registers[rr] = registers[rs] & imm;
+		break;
+	case 18:
+		registers[rr] = registers[rs] | imm;
+		break;
+	case 19:
+		if (registers[rr] < registers[rs]) {
+			pc = imm;
+		}
+		break;
+	case 20:
+		if (registers[rr] > registers[rs]) {
+			pc = imm;
+		}
+		break;
+	case 21:
+		pc = imm;
+		break;
+	case 22:
+		registers[18] = pc+TO_PC;
+		pc = imm;
 		break;
 	default:
+		runningStatus = 2;
 		break;
 	}
 }

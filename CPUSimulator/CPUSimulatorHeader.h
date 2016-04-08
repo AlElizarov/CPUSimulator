@@ -107,7 +107,7 @@ int const JCOMMANDS_FIELDS_COUNT = 2;
 int const RTCOMMANDS_FIELDS_COUNT = 2;
 int const UCOMMANDS_FIELDS_COUNT = 4;
 
-int const REG_COUNT = 16;
+int const REG_COUNT = 19;
 
 int const COMMANDS_COUNT = 23;
 int const ICOMMANDS_COUNT = 5;
@@ -117,11 +117,11 @@ int const JCOMMANDS_COUNT = 2;
 int const UCOMMANDS_COUNT = 2;
 
 int const OPCODE_LENGTH = 5;
-int const REGCODE_LENGTH = 4;
+int const REGCODE_LENGTH = 5;
 int const IMM = 16;
 
 string const registersCodes[REG_COUNT] = { "$0","$s0","$s1","$s2", "$t0", "$t1", "$t2", "$t3", "$t4", "$a0",
-                                      "$a1" "$a2", "$a3", "$v0", "$sp", "$gp" };
+                                      "$a1", "$a2", "$a3", "$v0", "$sp", "$gp", "$hp", "$k0", "$ra"};
 string const iCommands[ICOMMANDS_COUNT] = { "addi", "lw", "sw", "andi", "ori"};
 string const uCommands[UCOMMANDS_COUNT] = { "beq", "bne" };
 string const rCommands[RCOMMANDS_COUNT] = { "add", "sub", "div", "and", "or", "xor", "nor", "slt",
@@ -133,7 +133,13 @@ string const commands[COMMANDS_COUNT] = { "add", "sub", "mul", "div", "and", "or
 
 //simulator constants
 int const TO_PC = 4;
-unsigned int const RAM_SIZE = 16 * 1024;
+unsigned int const RAM_SIZE = 8 * 1024;
+unsigned int const TEXT_SEGMENT_SIZE_START = 0;
+unsigned int const TEXT_SEGMENT_SIZE_FINISH = 1024-1;
+unsigned int const GLOBAL_DATA_SEGMENT_SIZE_START = TEXT_SEGMENT_SIZE_FINISH+1;
+unsigned int const GLOBAL_DATA_SEGMENT_SIZE_FINISH = GLOBAL_DATA_SEGMENT_SIZE_START + 1024 - 1;
+unsigned int const DYNAMIC_DATA_SEGMENT_SIZE_START = GLOBAL_DATA_SEGMENT_SIZE_FINISH + 1;
+
 
 int const FIRST_R_COMMAND_IDX = 0;
 int const LAST_R_COMMAND_IDX = 11;
@@ -145,5 +151,11 @@ int const FIRST_U_COMMAND_IDX = 19;
 int const LAST_U_COMMAND_IDX = 20;
 int const FIRST_J_COMMAND_IDX = 21;
 int const LAST_J_COMMAND_IDX = 22;
+
+string const messgesAfterRun[10] = {
+	"programm finish successfully with code 0\n",
+	"runtime error. Access violation. Error code: 1\n",
+	"runtime error. Unknown command. Error code: 2\n",
+};
 
 #endif
