@@ -38,6 +38,7 @@ bool handleRTOperands(vector<string>&);
 bool handleUOperands(vector<string>&);
 
 bool isRegister(string&);
+bool isRegisterForWrite(string&);
 bool isArgDigit(string&);
 bool isInMarksTable(string&);
 bool isMark(string&);
@@ -52,7 +53,7 @@ int leftShift(int, int);
 void reverse(string&);
 string myTrim(string&);
 string ltrim(string&);
-string cutOffCharacterFromStr(string&, char);
+string cutOffSubstrFromStr(string&, char);
 bool findCharInString(string&, char);
 
 int getOpcode(string&);
@@ -66,6 +67,7 @@ int getNumberFromArray(string&, const string*, int);
 bool readCommand();
 void executeProgramm(string&);
 void loadProgramm(ifstream&);
+void callOperatingSystem();
 
 void decriptCommand();
 void executeCommand();
@@ -101,11 +103,11 @@ int const RT_POS = 3;
 int const IMM_POS = 3;
 int const MARK_POS = 3;
 
-int const RCOMMANDS_FIELDS_COUNT = 4;
-int const ICOMMANDS_FIELDS_COUNT = 4;
-int const JCOMMANDS_FIELDS_COUNT = 2;
-int const RTCOMMANDS_FIELDS_COUNT = 2;
-int const UCOMMANDS_FIELDS_COUNT = 4;
+unsigned int const RCOMMANDS_FIELDS_COUNT = 4;
+unsigned int const ICOMMANDS_FIELDS_COUNT = 4;
+unsigned int const JCOMMANDS_FIELDS_COUNT = 2;
+unsigned int const RTCOMMANDS_FIELDS_COUNT = 2;
+unsigned int const UCOMMANDS_FIELDS_COUNT = 4;
 
 int const REG_COUNT = 19;
 
@@ -120,11 +122,16 @@ int const OPCODE_LENGTH = 5;
 int const REGCODE_LENGTH = 5;
 int const IMM = 16;
 
+string const messgesAfterCompile[10] = {
+	". Unknown symbols\n",
+	". Wrong size of command\n",
+	". Wrong operands\n",
+};
 string const registersCodes[REG_COUNT] = { "$0","$s0","$s1","$s2", "$t0", "$t1", "$t2", "$t3", "$t4", "$a0",
                                       "$a1", "$a2", "$a3", "$v0", "$sp", "$gp", "$hp", "$k0", "$ra"};
 string const iCommands[ICOMMANDS_COUNT] = { "addi", "lw", "sw", "andi", "ori"};
 string const uCommands[UCOMMANDS_COUNT] = { "beq", "bne" };
-string const rCommands[RCOMMANDS_COUNT] = { "add", "sub", "div", "and", "or", "xor", "nor", "slt",
+string const rCommands[RCOMMANDS_COUNT] = { "add", "sub","mul", "div", "and", "or", "xor", "nor", "slt",
 "sll", "srl", "sra"};
 string const rtCommands[RTCOMMANDS_COUNT] = { "jr", "print"};
 string const jCommands[JCOMMANDS_COUNT] = { "j", "jal" };
