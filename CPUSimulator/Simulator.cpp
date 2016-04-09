@@ -10,7 +10,6 @@ using namespace std;
 short pc = TEXT_SEGMENT_SIZE_START;
 int ram[RAM_SIZE];
 short registers[REG_COUNT];
-int runningStatus;
 
 struct Instraction {
 	int command;
@@ -34,17 +33,22 @@ void executeProgramm(string& pathToMachineCode) {
 	registers[16] = DYNAMIC_DATA_SEGMENT_SIZE_START;
 	
 	while (readCommand()) {
-		pc = pc + TO_PC;
 		decriptCommand();
 		executeCommand();
-		if (runningStatus != 0) {
+		pc = pc + TO_PC;
+		if (registers[17] != 0) {
 			break;
 		}
 	}
-	pc = TEXT_SEGMENT_SIZE_START;
 	fileReader.close();
 
-	cout << messgesAfterRun[runningStatus];
+	callOperatingSystem();
+}
+
+void callOperatingSystem() {
+	cout << messgesAfterRun[registers[17]];
+	pc = TEXT_SEGMENT_SIZE_START;
+	registers[17] = 0;
 }
 
 void loadProgramm(ifstream& fileReader) {
@@ -154,7 +158,7 @@ void getRS() {
 }
 
 void getRT() {
-	int mask = 0x00001F00;
+	int mask = 0x0001F000;
 	int shift = CAPACITY - (OPCODE_LENGTH + 3 * REGCODE_LENGTH);
 	instaction.rt = separate(mask, shift);
 }
@@ -180,7 +184,7 @@ void executeCommand() {
 	int rt = instaction.rt;
 	int imm = instaction.imm;
 
-	int mask;
+	short mask;
 	int shift;
 	int addr;
 	bool comparisonResult;
@@ -208,7 +212,7 @@ void executeCommand() {
 		registers[rr] = registers[rs] ^ registers[rt];
 		break;
 	case 7:
-		mask = 0xFFFFFFFF;
+		mask = 0xFFFF;
 		registers[rr] = registers[rs] | registers[rt];
 		registers[rr] = registers[rr] ^ mask;
 		break;
@@ -225,7 +229,7 @@ void executeCommand() {
 		shift = registers[rt];
 		registers[rr] = registers[rs] >> 1;
 		shift--;
-		mask = 0x7FFFFFFF;
+		mask = 0x7FFF;
 		registers[rr] = registers[rr] & mask;
 		registers[rr] = registers[rs] >> shift;
 		break;
@@ -241,7 +245,7 @@ void executeCommand() {
 	case 15:
 		addr = registers[rs] + imm;
 		if (addr < DYNAMIC_DATA_SEGMENT_SIZE_START || addr >= RAM_SIZE) {
-			runningStatus = 1;
+			registers[17] = 1;
 		}
 		else {
 			registers[rr] = ram[addr];
@@ -250,7 +254,7 @@ void executeCommand() {
 	case 16:
 		addr = registers[rs] + imm;
 		if (addr < DYNAMIC_DATA_SEGMENT_SIZE_START || addr >= RAM_SIZE) {
-			runningStatus = 1;
+			registers[17] = 1;
 		}
 		else {
 			ram[addr] = registers[rr];
@@ -263,24 +267,24 @@ void executeCommand() {
 		registers[rr] = registers[rs] | imm;
 		break;
 	case 19:
-		if (registers[rr] < registers[rs]) {
-			pc = imm;
+		if (registers[rr] == registers[rs]) {
+			pc = imm - TO_PC;
 		}
 		break;
 	case 20:
-		if (registers[rr] > registers[rs]) {
-			pc = imm;
+		if (registers[rr] != registers[rs]) {
+			pc = imm - TO_PC;
 		}
 		break;
 	case 21:
-		pc = imm;
+		pc = imm - TO_PC;
 		break;
 	case 22:
-		registers[18] = pc+TO_PC;
+		registers[18] = pc;
 		pc = imm;
 		break;
 	default:
-		runningStatus = 2;
+		registers[17] = 2;
 		break;
 	}
 }
