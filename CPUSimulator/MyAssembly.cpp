@@ -1,7 +1,6 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <conio.h>
 #include <map>
 #include "CPUSimulatorHeader.h"
 
@@ -9,33 +8,54 @@ using namespace std;
 
 map<string, int> marksTable;
 vector<vector<string>> assemblyProgramm;
+vector<vector<string>> assemblyProgrammWithoutComments;
 string pathToAsmProgramm;
 ifstream fileReader;
+string compiledStatus;
+int compilingErrorsStatus;
 
 int main() {
-	firstPassage();                                               
-	createPause("Press enter to compile...");
+	char c = 0;
+	while (c != 'q') {
+		createFileReader();
+		firstPassage();
+		cin.get();
+		cin.get();
+		createPause("Press enter to compile...");
 
-	string pathToMachineCode = createMachineCodePath();                
-	createMachineCode(pathToMachineCode);                    // second passage
+		string pathToMachineCode = createMachineCodePath();
+		createMachineCode(pathToMachineCode);                    // second passage
 
-	createPause("Press enter to start...");
-	executeProgramm(pathToMachineCode);
-
-	_getch();
+		if (compiledStatus.compare("program compiled successfully\n") == 0) {
+			cout << compiledStatus;
+			createPause("\nPress enter to start...");
+			executeProgramm(pathToMachineCode);
+		}
+		else {
+			cout << compiledStatus << messgesAfterCompile[compilingErrorsStatus] << endl;
+		}
+		cout << "\n\npress c to continue or q to quit\n";
+		cin >> c;
+	}
 }
 
 void firstPassage() {
-	createFileReader();
 	string assemblyInstr;
 	int currentCommand = 0;
 	while (getline(fileReader, assemblyInstr))
 	{
+		if (findCharInString(assemblyInstr, '#')) {
+			assemblyInstr = cutOffSubstrFromStr(assemblyInstr, '#');
+		}
+		assemblyInstr = myTrim(assemblyInstr);
+		if (assemblyInstr.compare("") == 0) {
+			continue;
+		}
 		if (isMark(assemblyInstr)) {
-			marksTable[cutOffCharacterFromStr(assemblyInstr, ':')] = currentCommand;
+			marksTable[cutOffSubstrFromStr(assemblyInstr, ':')] = currentCommand;
 		}
 		else {
-			assemblyProgramm.push_back(parseOneAssemblyCommand(myTrim(assemblyInstr)));
+			assemblyProgramm.push_back(parseOneAssemblyCommand(assemblyInstr));
 			currentCommand += 4;
 		}
 	}
@@ -52,7 +72,6 @@ bool isMark(string& assemblyInstr) {
 void createPause(string message) {
 	cout << message;
 	cin.get();
-	cin.get();
 }
 
 
@@ -68,7 +87,7 @@ void createFileReader() {
 }
 
 string createMachineCodePath() {
-	return cutOffCharacterFromStr(pathToAsmProgramm, '.') + ".dat";
+	return cutOffSubstrFromStr(pathToAsmProgramm, '.') + ".dat";
 }
 
 vector<string> parseOneAssemblyCommand(string& assemblyInstruction) {
@@ -101,8 +120,6 @@ bool findCharInString(string& str, char c) {
 
 void createMachineCode(string& path) {
 	ofstream out(path, ios_base::out | ios_base::binary);
-
-	string compiledStatus;
 	int machineCode;
 
 	for (int instr = 0; instr < assemblyProgramm.size(); instr++) {
@@ -112,7 +129,8 @@ void createMachineCode(string& path) {
 				machineCode = convertIToMachineCode(assemblyProgramm[instr]);
 			}
 			else {
-				compiledStatus =  "syntax error i on line: " + to_string(instr + 1)+'\n';
+				compiledStatus =  "syntax error on line: " + to_string(instr + 1);
+				return;
 			}
 		}
 		else if (isRType(assemblyProgramm[instr][OPCODE_POS])) {
@@ -120,7 +138,8 @@ void createMachineCode(string& path) {
 				machineCode = convertRToMachineCode(assemblyProgramm[instr]);
 			}
 			else {
-				compiledStatus = "syntax error r on line: " + to_string(instr + 1) + '\n';
+				compiledStatus = "syntax error on line: " + to_string(instr + 1);
+				return;
 			}
 		}
 		else if (isJType(assemblyProgramm[instr][OPCODE_POS])){
@@ -128,7 +147,8 @@ void createMachineCode(string& path) {
 				machineCode = convertJToMachineCode(assemblyProgramm[instr]);
 			}
 			else {
-				compiledStatus =  "syntax error j on line: " + to_string(instr + 1) + '\n';
+				compiledStatus =  "syntax error on line: " + to_string(instr + 1);
+				return;
 			}
 		}
 		else if (isRTType(assemblyProgramm[instr][OPCODE_POS])) {
@@ -136,7 +156,8 @@ void createMachineCode(string& path) {
 				machineCode = convertRTToMachineCode(assemblyProgramm[instr]);
 			}
 			else {
-				compiledStatus = "syntax error j on line: " + to_string(instr + 1) + '\n';
+				compiledStatus = "syntax error on line: " + to_string(instr + 1);
+				return;
 			}
 		}
 		else if (isUType(assemblyProgramm[instr][OPCODE_POS])) {
@@ -144,11 +165,14 @@ void createMachineCode(string& path) {
 				machineCode = convertUToMachineCode(assemblyProgramm[instr]);
 			}
 			else {
-				compiledStatus = "syntax error j on line: " + to_string(instr + 1) + '\n';
+				compiledStatus = "syntax error on line: " + to_string(instr + 1);
+				return;
 			}
 		}
 		else {
-			compiledStatus = "syntax error on line: " + to_string(instr + 1) + '\n';
+			compilingErrorsStatus = 0;
+			compiledStatus = "syntax error on line: " + to_string(instr + 1);
+			return;
 		}
 
 		out.write((char*) &machineCode, sizeof machineCode);
@@ -163,7 +187,6 @@ void createMachineCode(string& path) {
 	out.close();
 
 	compiledStatus = "program compiled successfully\n";
-	cout << compiledStatus;
 }
 
 bool isIType(string& commandName) {
@@ -196,23 +219,43 @@ bool isThisType(const string* thisTypeCommands, int thisTypeCommandsCount, strin
 }
 
 bool isJCorrect(vector<string>& assmInstr) {
-	return assmInstr.size() == JCOMMANDS_FIELDS_COUNT && handleJOperands(assmInstr);
+	if (assmInstr.size() != JCOMMANDS_FIELDS_COUNT) {
+		compilingErrorsStatus = 1;
+		return false;
+	}
+	return handleJOperands(assmInstr);
 }
 
 bool isICorrect(vector<string>& assmInstr) {
-	return assmInstr.size() == ICOMMANDS_FIELDS_COUNT && handleIOperands(assmInstr);
+	if (assmInstr.size() != ICOMMANDS_FIELDS_COUNT) {
+		compilingErrorsStatus = 1;
+		return false;
+	}
+	return handleIOperands(assmInstr);
 }
 
 bool isRCorrect(vector<string>& assmInstr) {
-	return assmInstr.size() == RCOMMANDS_FIELDS_COUNT && handleROperands(assmInstr);
+	if (assmInstr.size() != RCOMMANDS_FIELDS_COUNT) {
+		compilingErrorsStatus = 1;
+		return false;
+	}
+	return handleROperands(assmInstr);
 }
 
 bool isRTCorrect(vector<string>& assmInstr) {
-	return assmInstr.size() == RTCOMMANDS_FIELDS_COUNT && handleRTOperands(assmInstr);
+	if (assmInstr.size() != RTCOMMANDS_FIELDS_COUNT) {
+		compilingErrorsStatus = 1;
+		return false;
+	}
+	return handleRTOperands(assmInstr);
 }
 
 bool isUCorrect(vector<string>& assmInstr) {
-	return assmInstr.size() == UCOMMANDS_FIELDS_COUNT && handleUOperands(assmInstr);
+	if (assmInstr.size() != UCOMMANDS_FIELDS_COUNT) {
+		compilingErrorsStatus = 1;
+		return false;
+	}
+	return handleUOperands(assmInstr);
 }
 
 bool handleJOperands(vector<string>& assmInstr) {
@@ -220,11 +263,11 @@ bool handleJOperands(vector<string>& assmInstr) {
 }
 
 bool handleIOperands(vector<string>& assmInstr) {
-	return isRegister(assmInstr[RR_POS]) && isRegister(assmInstr[RS_POS]) && isArgDigit(assmInstr[IMM_POS]);
+	return isRegister(assmInstr[RR_POS]) && isRegisterForWrite(assmInstr[RR_POS]) && isRegister(assmInstr[RS_POS]) && isArgDigit(assmInstr[IMM_POS]);
 }
 
 bool handleROperands(vector<string>& assmInstr) {
-	return isRegister(assmInstr[RR_POS]) && isRegister(assmInstr[RS_POS]) && isRegister(assmInstr[RT_POS]);
+	return isRegister(assmInstr[RR_POS]) && isRegisterForWrite(assmInstr[RR_POS]) && isRegister(assmInstr[RS_POS]) && isRegister(assmInstr[RT_POS]);
 }
 
 bool handleRTOperands(vector<string>& assmInstr) {
@@ -243,6 +286,14 @@ bool isRegister(string& registerName) {
 		}
 	}
 	return false;
+}
+
+bool isRegisterForWrite(string& registerName) {
+	if (registerName.compare("$0") == 0 || registerName.compare("$ra") == 0 || registerName.compare("$k0") == 0) {
+		compilingErrorsStatus = 2;
+		return false;
+	}
+	return true;
 }
 
 bool isInMarksTable(string& arg) {
@@ -374,7 +425,7 @@ string ltrim(string& str) {
 	return str.substr(afterSpaces, (str.length() - afterSpaces));
 }
 
-string cutOffCharacterFromStr(string& str, char character) {
+string cutOffSubstrFromStr(string& str, char character) {
 	int beforeDot = 0;
 	for (char c : str)
 	{
