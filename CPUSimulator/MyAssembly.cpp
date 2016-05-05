@@ -4,6 +4,7 @@
 #include <map>
 #include "Assembly.h"
 #include "CPUSimulatorHeader.h"
+#include "utils.h"
 
 using namespace std;
 
@@ -30,6 +31,9 @@ void compile(string path) {
 
 	if (compiledStatus.compare("program compiled successfully\n") == 0) {
 		cout << compiledStatus;
+		// debug
+		createPause("enter to run");
+		executeProgramm(pathToMachineCode);
 	}
 	else {
 		cout << compiledStatus << messgesAfterCompile[compilingErrorsStatus] << endl;
@@ -95,14 +99,6 @@ vector<string> parseOneAssemblyCommand(string& assemblyInstruction) {
 		}
 	}
 	return tmp;
-}
-
-bool findCharInString(string& str, char c) {
-	for (char character : str) {
-		if (character == c)
-			return true;
-	}
-	return false;
 }
 
 void createMachineCode(string& path) {
@@ -373,56 +369,7 @@ int getNumberFromArray(string& value, const string* arr, int arrLength) {
 	}
 }
 
-int leftShift(int shifted, int shiftValue) {
-	int result = shifted;
-	for (int i = 0; i < shiftValue; i++) {
-		result = result << 1;
-	}
-	return result;
-}
 
-void reverse(string &s)
-{
-	int tmp;
-
-	for (int i = 0, j = s.length() - 1; i < j; i++, j--)
-	{
-		tmp = s[i];
-		s[i] = s[j];
-		s[j] = tmp;
-	}
-}
-
-string myTrim(string& str)
-{
-	string trimmed = ltrim(str);
-	reverse(trimmed);
-	trimmed = ltrim(trimmed);
-	reverse(trimmed);
-	return trimmed;
-}
-
-string ltrim(string& str) {
-	int afterSpaces = 0;
-	for (char c : str)
-	{
-		if (!isspace(c))
-			break;
-		afterSpaces++;
-	}
-	return str.substr(afterSpaces, (str.length() - afterSpaces));
-}
-
-string cutOffSubstrFromStr(string& str, char character) {
-	int beforeDot = 0;
-	for (char c : str)
-	{
-		if (c == character)
-			break;
-		beforeDot++;
-	}
-	return str.substr(0, beforeDot);
-}
 
 
 
