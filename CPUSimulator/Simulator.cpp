@@ -3,12 +3,11 @@
 #include <sstream>
 #include <conio.h>
 #include <clocale>
-#include "CPUSimulatorHeader.h"
-#include "myarchitecture.h"
+#include "cpu.h"
 
 using namespace std;
 
-short pc = TEXT_SEGMENT_SIZE_START;
+unsigned short pc;
 int ram[RAM_SIZE];
 short registers[REG_COUNT];
 
@@ -22,16 +21,19 @@ struct Instraction {
 };
 
 Instraction instaction;
+PCB pcb;
 
+void executeProgramm(PCB pcbInput) {
+	pcb = pcbInput;
+	pc = pcb.pc;
 
-void executeProgramm(string& pathToMachineCode) {
+	for (int i = 0; i < REG_COUNT; i++) {
+		registers[i] = pcb.registers[i];
+	}
+
 	ifstream fileReader;
-	fileReader.open(pathToMachineCode);
+	fileReader.open(pcb.path);
 	loadProgramm(fileReader);
-
-	registers[14] = GLOBAL_DATA_SEGMENT_SIZE_START;
-	registers[15] = RAM_SIZE - 1;
-	registers[16] = DYNAMIC_DATA_SEGMENT_SIZE_START;
 	
 	while (readCommand()) {
 		decriptCommand();
@@ -42,19 +44,13 @@ void executeProgramm(string& pathToMachineCode) {
 		}
 	}
 	fileReader.close();
+	cout <<pcb.path<<" run status: "<< messgesAfterRun[registers[17]];
 
-	callOperatingSystem();
-}
-
-void callOperatingSystem() {
-	cout << messgesAfterRun[registers[17]];
-	pc = TEXT_SEGMENT_SIZE_START;
-	registers[17] = 0;
 }
 
 void loadProgramm(ifstream& fileReader) {
 	int commandToMemory;
-	int startAdress = 0;
+	int startAdress = pc;
 	while (fileReader.read((char*)& commandToMemory, sizeof(int))) {
 		ram[startAdress] = commandToMemory;
 		startAdress = startAdress + TO_PC;
@@ -184,7 +180,6 @@ void executeCommand() {
 	int rs = instaction.rs;
 	int rt = instaction.rt;
 	int imm = instaction.imm;
-
 	short mask;
 	int shift;
 	int addr;
@@ -244,7 +239,7 @@ void executeCommand() {
 		break;
 	case 15:
 		addr = registers[rs] + imm;
-		if (addr < DYNAMIC_DATA_SEGMENT_SIZE_START || addr >= RAM_SIZE) {
+		if (addr < pcb.startOfStackSegment || addr >= RAM_SIZE) {
 			registers[17] = 1;
 		}
 		else {
@@ -253,7 +248,7 @@ void executeCommand() {
 		break;
 	case 16:
 		addr = registers[rs] + imm;
-		if (addr < DYNAMIC_DATA_SEGMENT_SIZE_START || addr >= RAM_SIZE) {
+		if (addr < pcb.startOfStackSegment || addr >= RAM_SIZE) {
 			registers[17] = 1;
 		}
 		else {
@@ -268,16 +263,16 @@ void executeCommand() {
 		break;
 	case 19:
 		if (registers[rr] == registers[rs]) {
-			pc = imm - TO_PC;
+			pc = imm + pcb.startOfSegment - TO_PC;     //because there will be + TO_PC after execute and before read, so we will read newxt instraction
 		}
 		break;
 	case 20:
 		if (registers[rr] != registers[rs]) {
-			pc = imm - TO_PC;
+			pc = imm + pcb.startOfSegment - TO_PC;
 		}
 		break;
 	case 21:
-		pc = imm - TO_PC;
+		pc = imm + pcb.startOfSegment-TO_PC;
 		break;
 	case 22:
 		registers[18] = pc;
