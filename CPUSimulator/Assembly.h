@@ -50,13 +50,6 @@ int convertRToMachineCode(vector<string>&);
 int convertRTToMachineCode(vector<string>&);
 int convertUToMachineCode(vector<string>&);
 
-int leftShift(int, int);
-void reverse(string&);
-string myTrim(string&);
-string ltrim(string&);
-string cutOffSubstrFromStr(string&, char);
-bool findCharInString(string&, char);
-
 int getOpcode(string&);
 int getOperand(string&, int);
 int getAddrJ(string&);
