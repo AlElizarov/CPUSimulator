@@ -2,7 +2,6 @@
 #include <fstream>
 #include <sstream>
 #include <conio.h>
-#include <clocale>
 #include "MyArhitecture.h"
 #include "MySimulator.h"
 
