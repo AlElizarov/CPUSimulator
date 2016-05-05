@@ -9,6 +9,6 @@ std::vector<std::string> inputProgrammsForExecute();
 void validatePath(std::string*, std::ifstream&, std::string&, std::string);
 void complileMode();
 void executeMode();
-char choiceMode();
+string choiceMode();
 
 #endif
