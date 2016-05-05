@@ -1,48 +1,12 @@
-#ifndef cpuu
-#define cpuu
+#ifndef myassm
+#define myassm
 
 #include <string>
 #include <vector>
+#include "MyArhitecture.h"
 
 using namespace std;
 
-//architecture
-int const OPCODE_LENGTH = 5;
-int const REGCODE_LENGTH = 5;
-int const IMM = 16;
-int const CAPACITY = 32;
-
-int const TO_PC = 4;
-unsigned int const RAM_SIZE = 64 * 1024;
-
-const unsigned int TEXT_SEGMENT_SIZE = 1024;
-const unsigned int PROCESS_SEGMENT_SIZE = 1024 * 8;
-const unsigned int GLOBAL_DATA_SEGMENT_SIZE = 1024;
-const unsigned int STACK_DATA_SEGMENT_SIZE = 6 * 1024;
-int const REG_COUNT = 19;
-struct PCB
-{
-	std::string path;
-	unsigned short pc;
-
-	unsigned short startOfTextSegment;
-	unsigned short endOfTextSegment;
-
-	unsigned short startOfGBSegment;
-	unsigned short endOfGBSegment;
-
-	unsigned short startOfStackSegment;
-	unsigned short endOfStackSegment;
-
-	unsigned short startOfSegment;
-	unsigned short endOfSegment;
-
-	short registers[REG_COUNT];
-};
-
-
-//assembly
-//methods
 void compile(string);
 void createPause(string);
 void createFileReader();
@@ -129,81 +93,4 @@ string const rtCommands[RTCOMMANDS_COUNT] = { "jr", "print" };
 string const jCommands[JCOMMANDS_COUNT] = { "j", "jal" };
 string const commands[COMMANDS_COUNT] = { "add", "sub", "mul", "div", "and", "or", "xor", "nor", "slt",
 "sll", "srl", "sra", "jr", "print", "addi", "lw", "sw", "andi", "ori", "beq", "bne", "j", "jal" };
-
-
-//comp
-string inputProgramForCompile();
-vector<string> inputProgrammsForExecute();
-void validatePath(string*, ifstream&, string&, string);
-void complileMode();
-void executeMode();
-char choiceMode();
-
-
-//simulator
-//simulator functions
-bool readCommand();
-void executeProgramm(PCB);
-void loadProgramm(ifstream&);
-void callOperatingSystem();
-
-void decriptCommand();
-void executeCommand();
-
-int separate(int, int);
-int rightShift(int, int);
-
-void separateOpcode();
-void separateJAddress();
-void separateImm();
-
-void getJOperands();
-void getIOperands();
-void getROperands();
-void getRTOperands();
-void getUOperands();
-
-void getRR();
-void getRS();
-void getRT();
-
-bool isJOpcode();
-bool isIOpcode();
-bool isROpcode();
-bool isRTOpcode();
-
-//simulator constants
-
-int const FIRST_R_COMMAND_IDX = 0;
-int const LAST_R_COMMAND_IDX = 11;
-int const FIRST_RT_COMMAND_IDX = 12;
-int const LAST_RT_COMMAND_IDX = 13;
-int const FIRST_I_COMMAND_IDX = 14;
-int const LAST_I_COMMAND_IDX = 18;
-int const FIRST_U_COMMAND_IDX = 19;
-int const LAST_U_COMMAND_IDX = 20;
-int const FIRST_J_COMMAND_IDX = 21;
-int const LAST_J_COMMAND_IDX = 22;
-
-string const messgesAfterRun[10] = {
-	"programm finish successfully with code 0\n",
-	"runtime error. Access violation. Error code: 1\n",
-	"runtime error. Unknown command. Error code: 2\n",
-};
-
-
-//os
-void getProgramms(std::vector<std::string>&);
-PCB initializePCB(int, std::string);
-
-//util
-string cutOffSubstrFromStr(string&, char);
-int leftShift(int, int);
-string reverse(string);
-string myTrim(string);
-string ltrim(string);
-bool findCharInString(string&, char);
-
-
-
 #endif

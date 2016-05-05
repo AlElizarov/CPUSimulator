@@ -2,7 +2,10 @@
 #include <fstream>
 #include <sstream>
 #include <map>
-#include "cpu.h"
+#include "MyArhitecture.h"
+#include "MyAssembly.h"
+#include "utils.h"
+
 using namespace std;
 
 struct AsmProgramm

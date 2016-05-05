@@ -2,7 +2,10 @@
 #include <conio.h>
 #include <fstream>
 #include <string>
-#include "cpu.h"
+#include "MyAssembly.h"
+#include "MyOS.h"
+#include "MyComputer.h"
+#include "utils.h"
 
 using namespace std;
 

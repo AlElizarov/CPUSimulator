@@ -3,7 +3,8 @@
 #include <sstream>
 #include <conio.h>
 #include <clocale>
-#include "cpu.h"
+#include "MyArhitecture.h"
+#include "MySimulator.h"
 
 using namespace std;
 

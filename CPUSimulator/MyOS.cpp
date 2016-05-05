@@ -1,8 +1,10 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <queue>  
-#include "cpu.h"
+#include <queue> 
+#include "MyArhitecture.h"
+#include "MySimulator.h"
+#include "MyOS.h"
 
 using namespace std;
 
