@@ -37,8 +37,8 @@ PCB initializePCB(int processNumber, string path) {
 	for (int i = 0; i < REG_COUNT; i++) {
 		pcb.registers[i] = 0;
 	}
-	pcb.registers[14] = pcb.startOfGBSegment;
-	pcb.registers[15] = pcb.startOfStackSegment;
+	pcb.registers[14] = pcb.startOfStackSegment;
+	pcb.registers[15] = pcb.startOfGBSegment;
 	
 	
 	pcb.pc = pcb.startOfTextSegment;
