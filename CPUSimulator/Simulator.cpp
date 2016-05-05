@@ -4,6 +4,7 @@
 #include <conio.h>
 #include <clocale>
 #include "CPUSimulatorHeader.h"
+#include "myarchitecture.h"
 
 using namespace std;
 
@@ -187,7 +188,6 @@ void executeCommand() {
 	short mask;
 	int shift;
 	int addr;
-	bool comparisonResult;
 	switch (instaction.opcode)
 	{
 	case 0:
