@@ -2,9 +2,7 @@
 #include <conio.h>
 #include <fstream>
 #include <string>
-#include "Assembly.h"
-#include "comp.h"
-#include "Utils.h"
+#include "cpu.h"
 
 using namespace std;
 
@@ -26,7 +24,7 @@ int main() {
 string inputProgramForCompile() {
 	cout << "Enter the full name of the file with a program in assembly language: ";
 	string pathToAsmProgramm;
-	cin >> pathToAsmProgramm;
+	getline(cin, pathToAsmProgramm);
 	ifstream fileReader;
 	fileReader.open(pathToAsmProgramm);
 	string validateMsgs[3] = {"File with the specified name does not exist. ", 
@@ -70,6 +68,7 @@ void validatePath(string* validateMsgs, ifstream& fileReader, string& path, stri
 		cin >> path;
 		if (path == "q" || path == "Q") {
 			path = "";
+			cin.get();
 			break;
 		}
 		fileReader.open(path);
@@ -90,13 +89,7 @@ void complileMode() {
 void executeMode() {
 	vector<string> programmsForExecute = inputProgrammsForExecute();
 	if (programmsForExecute.size() > 0) {
-
-		//debug
-		if (programmsForExecute.size() > 0) {
-			for (string item : programmsForExecute) {
-				cout << item << endl;
-			}
-		}
+		getProgramms(programmsForExecute);
 	}
 	else {
 		cout << "You don't choice any programms for execute. Programm finishs. Good buy!" << endl;

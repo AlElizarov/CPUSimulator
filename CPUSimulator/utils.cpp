@@ -1,5 +1,5 @@
 #include <string>
-#include "Utils.h"
+#include "cpu.h"
 
 using namespace std;
 
@@ -56,9 +56,9 @@ string ltrim(string str) {
 	return str.substr(afterSpaces, (str.length() - afterSpaces));
 }
 
-bool findCharInString(string& str, char character) {
+bool findCharInString(string& str, char c) {
 	for (char character : str) {
-		if (character == character)
+		if (character == c)
 			return true;
 	}
 	return false;

@@ -2,10 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include <map>
-#include "Assembly.h"
-#include "CPUSimulatorHeader.h"
-#include "utils.h"
-
+#include "cpu.h"
 using namespace std;
 
 struct AsmProgramm
@@ -22,7 +19,6 @@ int compilingErrorsStatus;
 void compile(string path) {
 	programm.path = path;
 	firstPassage();
-	cin.get();
 
 	createPause("Press enter to compile...");
 
@@ -31,9 +27,6 @@ void compile(string path) {
 
 	if (compiledStatus.compare("program compiled successfully\n") == 0) {
 		cout << compiledStatus;
-		// debug
-		createPause("enter to run");
-		executeProgramm(pathToMachineCode);
 	}
 	else {
 		cout << compiledStatus << messgesAfterCompile[compilingErrorsStatus] << endl;
