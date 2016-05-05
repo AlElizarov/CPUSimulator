@@ -2,46 +2,45 @@
 #include <fstream>
 #include <sstream>
 #include <map>
+#include "Assembly.h"
 #include "CPUSimulatorHeader.h"
 
 using namespace std;
 
-map<string, int> marksTable;
-vector<vector<string>> assemblyProgramm;
-vector<vector<string>> assemblyProgrammWithoutComments;
-string pathToAsmProgramm;
-ifstream fileReader;
+struct AsmProgramm
+{
+	map<string, int> marksTable;
+	vector<vector<string>> instractions;
+	string path;
+};
+AsmProgramm programm;
+
 string compiledStatus;
 int compilingErrorsStatus;
 
-int main() {
-	char c = 0;
-	while (c != 'q') {
-		createFileReader();
-		firstPassage();
-		cin.get();
-		cin.get();
-		createPause("Press enter to compile...");
+void compile(string path) {
+	programm.path = path;
+	firstPassage();
+	cin.get();
 
-		string pathToMachineCode = createMachineCodePath();
-		createMachineCode(pathToMachineCode);                    // second passage
+	createPause("Press enter to compile...");
 
-		if (compiledStatus.compare("program compiled successfully\n") == 0) {
-			cout << compiledStatus;
-			createPause("\nPress enter to start...");
-			executeProgramm(pathToMachineCode);
-		}
-		else {
-			cout << compiledStatus << messgesAfterCompile[compilingErrorsStatus] << endl;
-		}
-		cout << "\n\npress c to continue or q to quit\n";
-		cin >> c;
+	string pathToMachineCode = createMachineCodePath();
+	createMachineCode(pathToMachineCode);                    // second passage
+
+	if (compiledStatus.compare("program compiled successfully\n") == 0) {
+		cout << compiledStatus;
+	}
+	else {
+		cout << compiledStatus << messgesAfterCompile[compilingErrorsStatus] << endl;
 	}
 }
 
 void firstPassage() {
 	string assemblyInstr;
 	int currentCommand = 0;
+	ifstream fileReader;
+	fileReader.open(programm.path);
 	while (getline(fileReader, assemblyInstr))
 	{
 		if (findCharInString(assemblyInstr, '#')) {
@@ -52,10 +51,10 @@ void firstPassage() {
 			continue;
 		}
 		if (isMark(assemblyInstr)) {
-			marksTable[cutOffSubstrFromStr(assemblyInstr, ':')] = currentCommand;
+			programm.marksTable[cutOffSubstrFromStr(assemblyInstr, ':')] = currentCommand;
 		}
 		else {
-			assemblyProgramm.push_back(parseOneAssemblyCommand(assemblyInstr));
+			programm.instractions.push_back(parseOneAssemblyCommand(assemblyInstr));
 			currentCommand += 4;
 		}
 	}
@@ -74,20 +73,8 @@ void createPause(string message) {
 	cin.get();
 }
 
-
-void createFileReader() {
-	cout << "Enter the full name of the file with a program in assembly language: ";
-	cin >> pathToAsmProgramm;
-	fileReader.open(pathToAsmProgramm);
-	while (!fileReader.is_open()) {
-		cout << "File with the specified name does not exist. Please enter a different name: ";
-		cin >> pathToAsmProgramm;
-		fileReader.open(pathToAsmProgramm);
-	}
-}
-
 string createMachineCodePath() {
-	return cutOffSubstrFromStr(pathToAsmProgramm, '.') + ".dat";
+	return cutOffSubstrFromStr(programm.path, '.') + ".dat";
 }
 
 vector<string> parseOneAssemblyCommand(string& assemblyInstruction) {
@@ -122,47 +109,47 @@ void createMachineCode(string& path) {
 	ofstream out(path, ios_base::out | ios_base::binary);
 	int machineCode;
 
-	for (int instr = 0; instr < assemblyProgramm.size(); instr++) {
+	for (size_t instr = 0; instr < programm.instractions.size(); instr++) {
 
-		if (isIType(assemblyProgramm[instr][OPCODE_POS])) {
-			if (isICorrect(assemblyProgramm[instr])) {
-				machineCode = convertIToMachineCode(assemblyProgramm[instr]);
+		if (isIType(programm.instractions[instr][OPCODE_POS])) {
+			if (isICorrect(programm.instractions[instr])) {
+				machineCode = convertIToMachineCode(programm.instractions[instr]);
 			}
 			else {
 				compiledStatus =  "syntax error on line: " + to_string(instr + 1);
 				return;
 			}
 		}
-		else if (isRType(assemblyProgramm[instr][OPCODE_POS])) {
-			if (isRCorrect(assemblyProgramm[instr])) {
-				machineCode = convertRToMachineCode(assemblyProgramm[instr]);
+		else if (isRType(programm.instractions[instr][OPCODE_POS])) {
+			if (isRCorrect(programm.instractions[instr])) {
+				machineCode = convertRToMachineCode(programm.instractions[instr]);
 			}
 			else {
 				compiledStatus = "syntax error on line: " + to_string(instr + 1);
 				return;
 			}
 		}
-		else if (isJType(assemblyProgramm[instr][OPCODE_POS])){
-			if (isJCorrect(assemblyProgramm[instr])) {
-				machineCode = convertJToMachineCode(assemblyProgramm[instr]);
+		else if (isJType(programm.instractions[instr][OPCODE_POS])){
+			if (isJCorrect(programm.instractions[instr])) {
+				machineCode = convertJToMachineCode(programm.instractions[instr]);
 			}
 			else {
 				compiledStatus =  "syntax error on line: " + to_string(instr + 1);
 				return;
 			}
 		}
-		else if (isRTType(assemblyProgramm[instr][OPCODE_POS])) {
-			if (isRTCorrect(assemblyProgramm[instr])) {
-				machineCode = convertRTToMachineCode(assemblyProgramm[instr]);
+		else if (isRTType(programm.instractions[instr][OPCODE_POS])) {
+			if (isRTCorrect(programm.instractions[instr])) {
+				machineCode = convertRTToMachineCode(programm.instractions[instr]);
 			}
 			else {
 				compiledStatus = "syntax error on line: " + to_string(instr + 1);
 				return;
 			}
 		}
-		else if (isUType(assemblyProgramm[instr][OPCODE_POS])) {
-			if (isUCorrect(assemblyProgramm[instr])) {
-				machineCode = convertUToMachineCode(assemblyProgramm[instr]);
+		else if (isUType(programm.instractions[instr][OPCODE_POS])) {
+			if (isUCorrect(programm.instractions[instr])) {
+				machineCode = convertUToMachineCode(programm.instractions[instr]);
 			}
 			else {
 				compiledStatus = "syntax error on line: " + to_string(instr + 1);
@@ -178,7 +165,7 @@ void createMachineCode(string& path) {
 		out.write((char*) &machineCode, sizeof machineCode);
 		machineCode = 0;
 
-		if (instr == assemblyProgramm.size() - 1) {
+		if (instr == programm.instractions.size() - 1) {
 			int temp = 0;                                            // last command - halt.
 		    out.write((char*)&temp, sizeof(int));
 		}
@@ -297,7 +284,7 @@ bool isRegisterForWrite(string& registerName) {
 }
 
 bool isInMarksTable(string& arg) {
-	if (marksTable.count(arg)) {
+	if (programm.marksTable.count(arg)) {
 		return true;
 		
 	}
@@ -305,7 +292,7 @@ bool isInMarksTable(string& arg) {
 }
 
 bool isArgDigit(string& arg) {
-	for (int character = 0; character < arg.length(); character++) {
+	for (size_t character = 0; character < arg.length(); character++) {
 		if (character == 0 && arg[character] == '-') continue;
 		if (!isdigit(arg[character])) {
 			return false;
@@ -361,12 +348,12 @@ int getOperand(string& regName, int regPos) {
 }
 
 int getAddrJ(string& mark) {
-	int numberOfMark = marksTable[mark];
+	int numberOfMark = programm.marksTable[mark];
 	return leftShift(numberOfMark, CAPACITY - (OPCODE_LENGTH + IMM));
 }
 
 int getAddrU(string& mark) {
-	int numberOfMark = marksTable[mark];
+	int numberOfMark = programm.marksTable[mark];
 	return leftShift(numberOfMark, CAPACITY - (OPCODE_LENGTH + 2 * REGCODE_LENGTH + IMM));
 }
 
@@ -377,6 +364,7 @@ int getConstant(string& imm) {
 	return leftShift(constant16Bits, CAPACITY - (OPCODE_LENGTH + 2 * REGCODE_LENGTH + IMM));
 }
 
+//call with only correct value after check finished successfully
 int getNumberFromArray(string& value, const string* arr, int arrLength) {
 	for (int i = 0; i < arrLength; i++) {
 		if (value.compare(arr[i]) == 0) {
