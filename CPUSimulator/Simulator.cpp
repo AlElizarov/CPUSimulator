@@ -8,8 +8,9 @@
 using namespace std;
 
 unsigned short pc;
-int ram[RAM_SIZE];
-short registers[REG_COUNT];
+extern int ram[RAM_SIZE];
+int registers[REG_COUNT];
+short communicationPointer = 0;           
 
 struct Instraction {
 	int command;
@@ -276,7 +277,32 @@ void executeCommand() {
 		break;
 	case 22:
 		registers[18] = pc;
-		pc = imm;
+		pc = imm + pcb.startOfGBSegment - TO_PC;
+		break;
+	case 23:
+		if (communicationPointer > 4 * 1024) {
+			communicationPointer = 0;
+			registers[17] = 3;
+		}
+		else {
+			ram[communicationPointer] = registers[rr];
+			communicationPointer += TO_PC;
+		}
+		break;
+	case 24:
+		if (communicationPointer > 4 * 1024) {
+			communicationPointer = 0;
+			registers[17] = 3;
+		}
+		else {
+			communicationPointer -= TO_PC;
+			if (communicationPointer < 0) {
+				communicationPointer = 0;
+				registers[17] = 3;
+				break;
+			}
+			registers[rr] = ram[communicationPointer];
+		}
 		break;
 	default:
 		registers[17] = 2;
