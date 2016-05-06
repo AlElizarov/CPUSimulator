@@ -2,6 +2,9 @@
 #define myarch
 #include <string>
 
+int const TO_PC = 1;
+unsigned int const RAM_SIZE = 64 * 1024;
+
 int const OPCODE_LENGTH = 5;
 int const REGCODE_LENGTH = 5;
 int const IMM = 16;
@@ -25,6 +28,6 @@ struct PCB
 	unsigned short startOfSegment;
 	unsigned short endOfSegment;
 
-	short registers[REG_COUNT];
+	int registers[REG_COUNT];
 };
 #endif

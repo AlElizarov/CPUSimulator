@@ -36,9 +36,6 @@ bool isRTOpcode();
 
 //simulator constants
 
-int const TO_PC = 4;
-unsigned int const RAM_SIZE = 64 * 1024;
-
 int const FIRST_R_COMMAND_IDX = 0;
 int const LAST_R_COMMAND_IDX = 11;
 int const FIRST_RT_COMMAND_IDX = 12;
@@ -54,6 +51,7 @@ std::string const messgesAfterRun[10] = {
 	"programm finish successfully with code 0\n",
 	"runtime error. Access violation. Error code: 1\n",
 	"runtime error. Unknown command. Error code: 2\n",
+	"runtime error. Access violation for communication. Error code: 3\n"
 };
 
 #endif
