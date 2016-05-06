@@ -8,6 +8,8 @@
 
 using namespace std;
 
+int ram[RAM_SIZE];
+
 void getProgramms(vector<string>& programmsForExecute) {
 	queue<PCB> processQueue;
 	for (int i = 0; i < programmsForExecute.size(); i++) {
