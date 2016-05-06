@@ -55,7 +55,7 @@ void firstPassage() {
 		}
 		else {
 			programm.instractions.push_back(parseOneAssemblyCommand(assemblyInstr));
-			currentCommand += 4;
+			currentCommand += TO_PC;
 		}
 	}
 	fileReader.close();

@@ -71,10 +71,10 @@ unsigned int const JCOMMANDS_FIELDS_COUNT = 2;
 unsigned int const RTCOMMANDS_FIELDS_COUNT = 2;
 unsigned int const UCOMMANDS_FIELDS_COUNT = 4;
 
-int const COMMANDS_COUNT = 23;
+int const COMMANDS_COUNT = 25;
 int const ICOMMANDS_COUNT = 5;
 int const RCOMMANDS_COUNT = 12;
-int const RTCOMMANDS_COUNT = 2;
+int const RTCOMMANDS_COUNT = 4;
 int const JCOMMANDS_COUNT = 2;
 int const UCOMMANDS_COUNT = 2;
 
@@ -89,8 +89,8 @@ string const iCommands[ICOMMANDS_COUNT] = { "addi", "lw", "sw", "andi", "ori" };
 string const uCommands[UCOMMANDS_COUNT] = { "beq", "bne" };
 string const rCommands[RCOMMANDS_COUNT] = { "add", "sub","mul", "div", "and", "or", "xor", "nor", "slt",
 "sll", "srl", "sra" };
-string const rtCommands[RTCOMMANDS_COUNT] = { "jr", "print" };
+string const rtCommands[RTCOMMANDS_COUNT] = { "jr", "print", "comw", "comr" };
 string const jCommands[JCOMMANDS_COUNT] = { "j", "jal" };
 string const commands[COMMANDS_COUNT] = { "add", "sub", "mul", "div", "and", "or", "xor", "nor", "slt",
-"sll", "srl", "sra", "jr", "print", "addi", "lw", "sw", "andi", "ori", "beq", "bne", "j", "jal" };
+"sll", "srl", "sra", "jr", "print", "addi", "lw", "sw", "andi", "ori", "beq", "bne", "j", "jal", "comw", "comr" };
 #endif
