@@ -1,10 +1,14 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <queue>  
-#include "cpu.h"
+#include <queue> 
+#include "MyArhitecture.h"
+#include "MySimulator.h"
+#include "MyOS.h"
 
 using namespace std;
+
+int ram[RAM_SIZE];
 
 void getProgramms(vector<string>& programmsForExecute) {
 	queue<PCB> processQueue;
@@ -35,8 +39,8 @@ PCB initializePCB(int processNumber, string path) {
 	for (int i = 0; i < REG_COUNT; i++) {
 		pcb.registers[i] = 0;
 	}
-	pcb.registers[14] = pcb.startOfGBSegment;
-	pcb.registers[15] = pcb.startOfStackSegment;
+	pcb.registers[14] = pcb.startOfStackSegment;
+	pcb.registers[15] = pcb.startOfGBSegment;
 	
 	
 	pcb.pc = pcb.startOfTextSegment;

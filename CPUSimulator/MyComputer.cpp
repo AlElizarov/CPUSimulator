@@ -2,21 +2,27 @@
 #include <conio.h>
 #include <fstream>
 #include <string>
-#include "cpu.h"
+#include "MyAssembly.h"
+#include "MyOS.h"
+#include "MyComputer.h"
+#include "utils.h"
 
 using namespace std;
 
 int main() {
-	cout << "Do you want to compile or execute programm? (c/e): ";
-	char mode = choiceMode();
-	if (mode == 'c' || mode == 'C') {
-		complileMode();
-	}
-	if (mode == 'e' || mode == 'E') {
-		executeMode();
-	}
-	if (mode == 'q') {
-		cout << "You don't choice any mode. Programm finishs. Good buy!" << endl;
+	while (true) {
+		cout << "\n\n\nDo you want to compile or execute programm? (c/e). q to quite: ";
+		string mode = choiceMode();
+		if (mode == "c" || mode == "C") {
+			complileMode();
+		}
+		if (mode == "e" || mode == "E") {
+			executeMode();
+		}
+		if (mode == "q" || mode == "Q") {
+			cout << "You don't choice any mode. Programm finishs. Good buy!" << endl;
+			break;
+		}
 	}
 	_getch();
 }
@@ -38,9 +44,13 @@ vector<string> inputProgrammsForExecute() {
 	string path;
 	ifstream fileReader;
 	vector<string> programmNames;
-	while (true) {
+	int processCount = 0;
+	while (processCount < 7) {
+		if (processCount == 6) {
+			cout << "There are could be 7 processes or less. You already input 6 processes" << endl;
+		}
 		cout << "Enter the full name of programm or q to quite: ";
-		getline(cin, path);
+		getline(std::cin, path);
 		if (path == "q" || path == "Q") {
 			break;
 		}
@@ -52,6 +62,7 @@ vector<string> inputProgrammsForExecute() {
 		if (path != "") {
 			programmNames.push_back(path);
 		}
+		processCount++;
 	}
 	return programmNames;
 }
@@ -68,7 +79,7 @@ void validatePath(string* validateMsgs, ifstream& fileReader, string& path, stri
 		cin >> path;
 		if (path == "q" || path == "Q") {
 			path = "";
-			cin.get();
+			std::cin.get();
 			break;
 		}
 		fileReader.open(path);
@@ -79,7 +90,7 @@ void validatePath(string* validateMsgs, ifstream& fileReader, string& path, stri
 void complileMode() {
 	string programmForCompile = inputProgramForCompile();
 	if (programmForCompile == "") {
-		cout << "You don't choice any files. Programm finishs. Good buy!" << endl;
+		cout << "You don't choice any files." << endl;
 	}
 	else {
 		compile(programmForCompile);
@@ -92,20 +103,16 @@ void executeMode() {
 		getProgramms(programmsForExecute);
 	}
 	else {
-		cout << "You don't choice any programms for execute. Programm finishs. Good buy!" << endl;
+		cout << "You don't choice any programms for execute." << endl;
 	}
 }
 
-char choiceMode() {
-	char mode;
-	cin >> mode;
-	while (mode != 'c' && mode != 'e' && mode != 'C' && mode != 'E') {
+string choiceMode() {
+	string mode;
+	getline(cin, mode);
+	while (mode != "c" && mode != "e" && mode != "C" && mode != "E" && mode != "q" && mode != "Q") {
 		cout << "Please enter c or e (compile or execute) or q to quite: ";
-		cin >> mode;
-		if (mode == 'q' || mode == 'Q') {
-			return 'q';
-		}
+		getline(cin, mode);
 	}
-	cin.get();
 	return mode;
 }

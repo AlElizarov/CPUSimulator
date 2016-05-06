@@ -2,7 +2,10 @@
 #include <fstream>
 #include <sstream>
 #include <map>
-#include "cpu.h"
+#include "MyArhitecture.h"
+#include "MyAssembly.h"
+#include "utils.h"
+
 using namespace std;
 
 struct AsmProgramm
@@ -52,7 +55,7 @@ void firstPassage() {
 		}
 		else {
 			programm.instractions.push_back(parseOneAssemblyCommand(assemblyInstr));
-			currentCommand += 4;
+			currentCommand += TO_PC;
 		}
 	}
 	fileReader.close();
