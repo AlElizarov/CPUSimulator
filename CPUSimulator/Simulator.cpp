@@ -24,6 +24,8 @@ struct Instraction {
 Instraction instaction;
 PCB pcb;
 
+int check;
+
 void executeProgramm(PCB pcbInput) {
 	pcb = pcbInput;
 	pc = pcb.pc;
@@ -56,6 +58,7 @@ void loadProgramm(ifstream& fileReader) {
 		ram[startAdress] = commandToMemory;
 		startAdress = startAdress + TO_PC;
 	}
+	check = startAdress;
 }
 
 bool readCommand() {

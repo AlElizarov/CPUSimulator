@@ -21,6 +21,11 @@ int compilingErrorsStatus;
 
 void compile(string path) {
 	programm.path = path;
+	while (programm.instractions.size() > 0) {
+		programm.instractions.pop_back();
+	}
+
+	programm.marksTable.clear();
 	firstPassage();
 
 	createPause("Press enter to compile...");
@@ -98,7 +103,7 @@ vector<string> parseOneAssemblyCommand(string& assemblyInstruction) {
 }
 
 void createMachineCode(string& path) {
-	ofstream out(path, ios_base::out | ios_base::binary);
+	ofstream out(path, ios_base::binary);
 	int machineCode;
 
 	for (size_t instr = 0; instr < programm.instractions.size(); instr++) {
