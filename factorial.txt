@@ -1,0 +1,11 @@
+	addi $s0, $0, 1    
+	addi $s1, $0, 4    # n = 4
+	addi $t0, $0, 1
+for:
+	slt $t1, $s1, $t0
+	bne $t1, $0, endFor
+	mul $s0, $s0, $t0
+	addi $t0, $t0, 1
+	j for
+endFor:
+	print $s0

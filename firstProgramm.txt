@@ -1,0 +1,4 @@
+addi $s0, $0, 30       # i-type. $s0 = 10
+addi $s1, $0, 40       # i-type $s1 = 20
+add $s2, $s0, $s1      # r-type $s2 = 30
+print $s2              # j-type.
